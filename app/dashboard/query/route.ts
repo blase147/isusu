@@ -6,7 +6,7 @@ async function getClient() {
   return client;
 }
 
-async function listInvoices(client) {
+async function listInvoices(client: any) {
   const data = await client.sql`
     SELECT invoices.amount, customers.name
     FROM invoices
