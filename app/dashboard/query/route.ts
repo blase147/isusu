@@ -1,19 +1,25 @@
-import { db } from '@vercel/postgres';
-import { NextResponse } from 'next/server'; // Correct import for Next.js responses
+// import { db } from '@vercel/postgres';
+// import { NextResponse } from 'next/server';
+// import { PoolClient } from 'pg'; // Install @types/pg if not already installed
 
-async function getClient() {
-  const client = await db.connect();
-  return client;
-}
+// async function getClient(): Promise<PoolClient> {
+//   const client = await db.connect();
+//   return client as unknown as PoolClient; // Adjust typing if necessary
+// }
 
-// async function listInvoices(client: any) {
-//   const data = await client.sql`
-//     SELECT invoices.amount, customers.name
-//     FROM invoices
-//     JOIN customers ON invoices.customer_id = customers.id
-//     WHERE invoices.amount = 666;
-//   `;
-//   return data.rows;
+// async function listInvoices(client: PoolClient) {
+//   try {
+//     const data = await client.query(`
+//       SELECT invoices.amount, customers.name
+//       FROM invoices
+//       JOIN customers ON invoices.customer_id = customers.id
+//       WHERE invoices.amount = 666;
+//     `);
+//     return data.rows;
+//   } catch (error) {
+//     console.error('Error in listInvoices:', error);
+//     throw new Error('Failed to fetch invoices');
+//   }
 // }
 
 // export async function GET() {
