@@ -1,10 +1,7 @@
 'use server';
- 
+
 import { signIn } from '@/auth';
-import { AuthError } from 'next-auth';
- 
-// ...
- 
+
 export async function authenticate(
   prevState: string | undefined,
   formData: FormData,
@@ -12,14 +9,12 @@ export async function authenticate(
   try {
     await signIn('credentials', formData);
   } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case 'CredentialsSignin':
-          return 'Invalid credentials.';
-        default:
-          return 'Something went wrong.';
+    // Handle specific errors based on their message or other properties
+    if (error instanceof Error) {
+      if (error.message.includes('CredentialsSignin')) {
+        return 'Invalid credentials.';
       }
     }
-    throw error;
+    return 'Something went wrong.';
   }
 }

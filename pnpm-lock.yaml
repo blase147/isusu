@@ -30,7 +30,7 @@ importers:
         specifier: ^16.4.7
         version: 16.4.7
       next:
-        specifier: latest
+        specifier: ^15.1.4
         version: 15.1.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       next-auth:
         specifier: 4.24.11
