@@ -1,7 +1,7 @@
 'use server';
 
 import bcrypt from 'bcrypt';
-import { pool } from '@/app/lib/db';
+import pool from '@/app/lib/db';
 
 export async function signupAction({ name, email, password }: { name: string; email: string; password: string }) {
   if (!name || !email || !password) {
