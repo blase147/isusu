@@ -1,20 +1,19 @@
-import { NextAuthOptions } from "next-auth";
- 
+import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-export const authConfig: NextAuthOptions = {
+export const authConfig: AuthOptions = {
   pages: {
     signIn: '/login',
   },
   callbacks: {
-    async authorized({ auth, request: { nextUrl } }: { auth: any, request: { nextUrl: URL } }) {
-      const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+    async signIn({ user, account, profile, email, credentials }) {
+      const isLoggedIn = !!user;
+      const isOnDashboard = credentials?.nextUrl?.startsWith('/dashboard');
 
       if (isOnDashboard) {
         return isLoggedIn;
       } else if (isLoggedIn) {
-        return Response.redirect(new URL('/dashboard', nextUrl));
+        return '/dashboard'; // Redirect to dashboard
       }
 
       return true;
@@ -38,4 +37,3 @@ export const authConfig: NextAuthOptions = {
     }),
   ],
 };
-
