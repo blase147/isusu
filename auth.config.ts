@@ -1,12 +1,11 @@
-import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-export const authConfig: AuthOptions = {
+export const authConfig = {
   pages: {
     signIn: '/login',
   },
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
+    async signIn({ user, account, profile, email, credentials }: any) {
       const isLoggedIn = !!user;
       const isOnDashboard = credentials?.nextUrl?.startsWith('/dashboard');
 
