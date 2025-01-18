@@ -25,9 +25,9 @@ export const authConfig = {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
-        // Implement your authentication logic here
-        const user = { id: 1, name: "Test User", email: "test@example.com" }; // Dummy data
+      async authorize() {
+        // Update the id to a string to match the expected type
+        const user = { id: "1", name: "Test User", email: "test@example.com" }; // Updated id to a string
         if (user) {
           return user;
         }
