@@ -19,36 +19,40 @@ async function getUser(email: string): Promise<User | undefined> {
 export const { auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
-    Credentials({
-async authorize(credentials) {
-  const parsedCredentials = z
-    .object({ email: z.string().email(), password: z.string().min(6) })
-    .safeParse(credentials);
+Credentials({
+  credentials: {
+    email: { label: "Email", type: "text" },
+    password: { label: "Password", type: "password" }
+  },
+  async authorize(credentials) {
+    const parsedCredentials = z
+      .object({ email: z.string().email(), password: z.string().min(6) })
+      .safeParse(credentials);
 
-  if (!parsedCredentials.success) {
-    console.log('Invalid input format:', parsedCredentials.error);
+    if (!parsedCredentials.success) {
+      console.log('Invalid input format:', parsedCredentials.error);
+      return null;
+    }
+
+    const { email, password } = parsedCredentials.data;
+    console.log('Parsed credentials:', { email, password });
+
+    const user = await getUser(email);
+    if (!user) {
+      console.log('No user found for email:', email);
+      return null;
+    }
+
+    console.log('User found:', user);
+
+    const passwordsMatch = await bcrypt.compare(password, user.password);
+    console.log('Passwords match:', passwordsMatch);
+
+    if (passwordsMatch) return user;
+
+    console.log('Password did not match for user:', email);
     return null;
   }
-
-  const { email, password } = parsedCredentials.data;
-  console.log('Parsed credentials:', { email, password });
-
-  const user = await getUser(email);
-  if (!user) {
-    console.log('No user found for email:', email);
-    return null;
-  }
-
-  console.log('User found:', user);
-
-  const passwordsMatch = await bcrypt.compare(password, user.password);
-  console.log('Passwords match:', passwordsMatch);
-
-  if (passwordsMatch) return user;
-
-  console.log('Password did not match for user:', email);
-  return null;
-}
-    }),
+}),
   ],
 });
