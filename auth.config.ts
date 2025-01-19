@@ -1,8 +1,8 @@
-import { NextAuthOptions } from "next-auth";
+import { NextAuthConfig } from "next-auth";
  
 import CredentialsProvider from "next-auth/providers/credentials";
 
-export const authConfig: NextAuthOptions = {
+export const authConfig: NextAuthConfig = {
   pages: {
     signIn: '/login',
   },
