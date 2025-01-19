@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import bcrypt from 'bcrypt';
-import { pool } from '../../lib/db'; // Database connection pool
+import { pool } from '../lib/db'; // Database connection pool
 
 // Type for incoming data
 interface SignupData {
