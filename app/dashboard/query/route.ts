@@ -1,19 +1,25 @@
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server'; // Correct import for Next.js responses
+import { VercelPoolClient } from '@vercel/postgres';
 
 async function getClient() {
   const client = await db.connect();
   return client;
 }
 
-async function listInvoices(client) {
-  const data = await client.sql`
+interface Invoice {
+  amount: number;
+  name: string;
+}
+
+async function listInvoices(client: VercelPoolClient): Promise<Invoice[]> {
+  const data = await client.query(`
     SELECT invoices.amount, customers.name
     FROM invoices
     JOIN customers ON invoices.customer_id = customers.id
     WHERE invoices.amount = 666;
-  `;
-  return data.rows;
+  `);
+  return data.rows as Invoice[];
 }
 
 export async function GET() {
