@@ -1,5 +1,16 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+### Isusu is a digital savings and contribution platform designed to simplify and modernize traditional savings groups (Esusu, Ajo, Adashe, and Thrift). Whether you're pooling funds with friends, family, or colleagues, Isusu ensures secure, transparent, and automated contributions.
+
+Key Features:
+✅ Automated Contributions – Set up a savings cycle and let Isusu handle the rest.
+✅ Flexible Payouts – Rotate withdrawals among members based on an agreed schedule.
+✅ Secure Transactions – Powered by trusted payment gateways for smooth deposits and payouts.
+✅ Group & Personal Savings – Save collectively or individually towards your goals.
+✅ Reminders & Notifications – Stay updated on contributions and payouts.
+✅ Fraud Prevention – Built-in security measures to protect against defaults.
+
+Join Isusu today and take control of your savings with ease and trust! 🚀💰
 ## Getting Started
 
 First, run the development server:
