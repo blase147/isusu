@@ -7,16 +7,44 @@ const JoinIsusu = () => {
   const router = useRouter();
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
+    setError(""); // Clear previous errors
     if (!inviteCode.trim()) {
       setError("Please enter a valid invite code.");
       return;
     }
 
-    // Simulating a join request (Replace with actual API call)
-    console.log("Joining Isusu with code:", inviteCode);
-    router.push("/dashboard/isusu"); // Redirect after joining
+    setLoading(true);
+    try {
+      const res = await fetch("/api/isusu/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteCode }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.error === "already_member") {
+          setError("You belong to this group already.");
+        } else if (data.error === "owner") {
+          setError("You own this group.");
+        } else {
+          setError(data.error || "Failed to join group.");
+        }
+        return;
+      }
+
+      // Redirect on success
+      router.push("/dashboard/isusu");
+    } catch (err) {
+      console.error("Join error:", err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,9 +64,12 @@ const JoinIsusu = () => {
         {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
         <button
           onClick={handleJoin}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg mt-4 hover:bg-blue-700"
+          className={`w-full text-white px-4 py-2 rounded-lg mt-4 ${
+            loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          }`}
+          disabled={loading}
         >
-          Join Now
+          {loading ? "Joining..." : "Join Now"}
         </button>
       </div>
     </div>
