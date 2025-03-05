@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     const memberQuery = `SELECT * FROM "IsusuMembers" WHERE group_id = $1 AND user_id = $2`;
     const memberResult = await client.query(memberQuery, [group.id, userId]);
 
-    if (memberResult.rowCount > 0) {
+    if (memberResult.rowCount && memberResult.rowCount > 0) {
       await client.query("ROLLBACK");
       return NextResponse.json({ error: "already_member" }, { status: 400 });
     }
