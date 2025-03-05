@@ -57,18 +57,23 @@ const ManageIsusu = () => {
       </div>
 
       {/* Isusu Groups List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 mt-8 ">
         {isusuGroups.length > 0 ? (
           isusuGroups.map((group) => (
-            <div key={group.id} className="bg-white p-6 rounded-lg shadow-lg">
+            <div key={group.id} className="bg-white p-6 rounded-lg shadow-lg w-[350px] ">
               <div className="flex justify-between items-center mb-4">
-                <p className="text-xl font-bold text-blue-600">{group.isusuName}</p>
+                <div className="flex-columns items-left ">
+                  <p className="text-xl font-bold text-blue-600 w-full">{group.isusuName}</p>
+                  <Link href={`/dashboard/isusu/${group.id}`} className="flex items-center space-x-2 text-xs mr-2">
+                    <LinkIcon className="w-5 text-gray-600" /><span>Copy link</span>
+                  </Link>
+                </div>
                 <Link href={`/dashboard/isusu/${group.id}`} className="flex items-center space-x-2">
-                  <EyeIcon className="w-5 text-gray-600" />
+                  <span>Members: 20</span><EyeIcon className="w-5 text-gray-600" />
                 </Link>
               </div>
 
-              <p className="text-lg font-semibold text-black mb-2">{group.isusuClass}</p>
+              <p className="text-lg font-semibold text-black mb-8 text-center">{group.isusuClass}</p>
 
               <div className="flex justify-between items-center">
                 <p className="text-gray-700"><strong>Frequency:</strong> {group.frequency}</p>
