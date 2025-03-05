@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { BackwardIcon } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
@@ -9,22 +9,52 @@ const CreateIsusu = () => {
   const [frequency, setFrequency] = useState("");
   const [milestone, setMilestone] = useState("");
   const [isusuClass, setIsusuClass] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Creating Isusu with:", { isusuName, frequency, milestone });
-    // Handle API request or state update here
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/isusu", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isusuName, frequency, milestone, isusuClass }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create Isusu group");
+      }
+
+      await response.json();
+      alert("Isusu group created successfully!");
+      setIsusuName("");
+      setFrequency("");
+      setMilestone("");
+      setIsusuClass("");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <Link href="/dashboard/manage-isusu" className="flex items-center justify-center  mb-4">
-        <BackwardIcon className="m-2 w-6 h-6 text-blue-600 cursor-pointer" /><span>Go Back</span>
+        <BackwardIcon className="m-2 w-6 h-6 text-blue-600 cursor-pointer" />
+        <span>Go Back</span>
       </Link>
       <div className="bg-white p-8 rounded-lg shadow-lg w-[400px]">
         <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
           Create Isusu Group
         </h2>
+
+        {error && <p className="text-red-500 text-center">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -42,7 +72,7 @@ const CreateIsusu = () => {
           <div>
             <label className="block font-semibold">Class of Isusu</label>
             <select
-              title="Frequency"
+              title="Class of Isusu"
               className="w-full border p-2 rounded-md mt-1"
               value={isusuClass}
               onChange={(e) => setIsusuClass(e.target.value)}
@@ -60,21 +90,21 @@ const CreateIsusu = () => {
           </div>
 
           <div>
-            <label className="block font-semibold">Frequency</label>
+            <label htmlFor="frequency" className="block font-semibold">Frequency</label>
             <select
-              title="Frequency"
+              id="frequency"
               className="w-full border p-2 rounded-md mt-1"
               value={frequency}
               onChange={(e) => setFrequency(e.target.value)}
               required
             >
               <option value="">Select frequency</option>
-              <option value="Dayly">Dayly</option>
-              <option value="weekly">Weekly</option>
+              <option value="Daily">Daily</option>
+              <option value="Weekly">Weekly</option>
               <option value="Bi-weekly">Bi-weekly</option>
-              <option value="monthly">Monthly</option>
+              <option value="Monthly">Monthly</option>
               <option value="Quarterly">Quarterly</option>
-              <option value="annualy">Anually</option>
+              <option value="Annually">Annually</option>
             </select>
           </div>
 
@@ -93,8 +123,9 @@ const CreateIsusu = () => {
           <button
             type="submit"
             className="w-full bg-blue-600 text-white p-3 rounded-md font-semibold mt-4"
+            disabled={loading}
           >
-            Create Isusu
+            {loading ? "Creating..." : "Create Isusu"}
           </button>
         </form>
       </div>

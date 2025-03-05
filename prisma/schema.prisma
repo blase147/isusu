@@ -1,0 +1,16 @@
+model Isusu {
+  id        String  @id @default(uuid())
+  isusuName  String
+  frequency String
+  milestone Float
+  isusuClass  String
+  createdAt DateTime @default(now())
+}
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // or "mysql" or "sqlite" depending on your database
+  url      = env("DATABASE_URL")
+}
