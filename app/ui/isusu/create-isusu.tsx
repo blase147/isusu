@@ -19,18 +19,23 @@ const CreateIsusu = () => {
 
     try {
       const response = await fetch("/api/isusu", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ isusuName, frequency, milestone, isusuClass }),
-      });
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                isusuName,
+                frequency,
+                milestone: Number(milestone), // Convert to number
+                isusuClass,
+              }),
+            });
+
+      const text = await response.text(); // Read response as text
+      const data = text ? JSON.parse(text) : null; // Parse only if not empty
 
       if (!response.ok) {
-        throw new Error("Failed to create Isusu group");
+        throw new Error(data?.error || "Failed to create Isusu group");
       }
 
-      await response.json();
       alert("Isusu group created successfully!");
       setIsusuName("");
       setFrequency("");
@@ -45,7 +50,7 @@ const CreateIsusu = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <Link href="/dashboard/manage-isusu" className="flex items-center justify-center  mb-4">
+      <Link href="/dashboard/manage-isusu" className="flex items-center justify-center mb-4">
         <BackwardIcon className="m-2 w-6 h-6 text-blue-600 cursor-pointer" />
         <span>Go Back</span>
       </Link>
@@ -79,13 +84,13 @@ const CreateIsusu = () => {
               required
             >
               <option value="">Select Isusu Class</option>
-              <option value="EveryDay Market">EveryDay Market</option>
-              <option value="Weekend Oringo">Weekend Oringo</option>
+              <option value="EveryDayMarket">EveryDay Market</option>
+              <option value="WeekendOringo">Weekend Oringo</option>
               <option value="Uwamgbede">Uwamgbede</option>
-              <option value="PayDay Flex">PayDay Flex</option>
-              <option value="Quarter Merchants">Weekly Club Merchants</option>
-              <option value="Annual Grocery Merchants">Annual Grocery Merchants</option>
-              <option value="Chosen takes it all">Chosen takes it all</option>
+              <option value="PayDayFlex">PayDay Flex</option>
+              <option value="QuarterMerchants">Weekly Club Merchants</option>
+              <option value="AnnualGroceryMerchants">Annual Grocery Merchants</option>
+              <option value="ChosenTakesItAll">Chosen takes it all</option>
             </select>
           </div>
 
