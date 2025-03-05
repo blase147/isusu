@@ -1,16 +1,38 @@
-model Isusu {
-  id        String  @id @default(uuid())
-  isusuName  String
-  frequency String
-  milestone Float
-  isusuClass  String
-  createdAt DateTime @default(now())
+model User {
+  id    String @id @default(uuid()) @db.Uuid
+  email String @unique
+  name  String?
+
+  isusuMemberships IsusuMembers[]
 }
+
+model Isusu {
+  id         String  @id @default(uuid()) @db.Uuid
+  isusuName  String
+  frequency  String
+  milestone  Float
+  isusuClass String
+  invite_code String  @unique @default(uuid())
+  createdAt  DateTime @default(now())
+
+  members IsusuMembers[]
+}
+
+model IsusuMembers {
+  id        String  @id @default(uuid()) @db.Uuid
+  group_id  String  @db.Uuid
+  user_id   String  @db.Uuid
+  joined_at DateTime @default(now())
+
+  group  Isusu @relation(fields: [group_id], references: [id])
+  user   User  @relation(fields: [user_id], references: [id])
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // or "mysql" or "sqlite" depending on your database
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }

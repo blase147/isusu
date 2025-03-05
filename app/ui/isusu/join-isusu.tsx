@@ -1,13 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const JoinIsusu = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // ✅ Extract inviteCode from URL if present
+  useEffect(() => {
+    const codeFromURL = searchParams.get("invite_code");
+    if (codeFromURL) {
+      setInviteCode(codeFromURL);
+    }
+  }, [searchParams]);
 
   const handleJoin = async () => {
     setError(""); // Clear previous errors
@@ -21,23 +30,25 @@ const JoinIsusu = () => {
       const res = await fetch("/api/isusu/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteCode }),
+        body: JSON.stringify({ inviteCode }), // ✅ Match backend `inviteCode` key
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         if (data.error === "already_member") {
-          setError("You belong to this group already.");
+          setError("You are already a member of this group.");
         } else if (data.error === "owner") {
-          setError("You own this group.");
+          setError("You own this group and cannot join as a member.");
+        } else if (data.error === "Group not found") {
+          setError("Invalid invite code. Please check and try again.");
         } else {
           setError(data.error || "Failed to join group.");
         }
         return;
       }
 
-      // Redirect on success
+      // ✅ Redirect on success
       router.push("/dashboard/isusu");
     } catch (err) {
       console.error("Join error:", err);

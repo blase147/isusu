@@ -3,59 +3,63 @@ import { pool } from "@/app/lib/db";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const session = await auth(); // ✅ Use auth() instead of getServerSession
+  const session = await auth();
 
   if (!session || !session.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { inviteCode } = await req.json();
-  const userId = session.user.id; // ✅ Extract user ID safely
+  const userId = session.user.id;
+
+  if (!inviteCode) {
+    return NextResponse.json({ error: "Invite code is required" }, { status: 400 });
+  }
 
   let client;
   try {
-    client = await pool.connect(); // Connect to PostgreSQL
+    client = await pool.connect();
+    await client.query("BEGIN"); // Start transaction
 
-    // Check if the group exists
-    const groupQuery = "SELECT * FROM isusu_groups WHERE invite_code = $1";
+    // Check if group exists
+    const groupQuery = `SELECT * FROM "Isusu" WHERE invite_code = $1`;
     const groupResult = await client.query(groupQuery, [inviteCode]);
 
     if (groupResult.rowCount === 0) {
+      await client.query("ROLLBACK"); // Rollback in case of failure
       return NextResponse.json({ error: "Group not found" }, { status: 404 });
     }
 
     const group = groupResult.rows[0];
 
-    // If user is the owner of the group
+    // Prevent the owner from joining as a member
     if (group.owner_id === userId) {
+      await client.query("ROLLBACK");
       return NextResponse.json({ error: "owner" }, { status: 400 });
     }
 
     // Check if user is already a member
-    const memberQuery =
-      "SELECT * FROM isusu_group_members WHERE group_id = $1 AND user_id = $2";
+    const memberQuery = `SELECT * FROM "IsusuMembers" WHERE group_id = $1 AND user_id = $2`;
     const memberResult = await client.query(memberQuery, [group.id, userId]);
 
-    if (memberResult.rowCount !== null && memberResult.rowCount > 0) {
+    if (memberResult.rowCount > 0) {
+      await client.query("ROLLBACK");
       return NextResponse.json({ error: "already_member" }, { status: 400 });
     }
 
     // Add user to the group
-    const addMemberQuery =
-      "INSERT INTO isusu_group_members (group_id, user_id) VALUES ($1, $2)";
+    const addMemberQuery = `INSERT INTO "IsusuMembers" (group_id, user_id) VALUES ($1, $2)`;
     await client.query(addMemberQuery, [group.id, userId]);
 
-    return NextResponse.json(
-      { message: "Successfully joined the group" },
-      { status: 200 }
-    );
+    await client.query("COMMIT"); // Commit transaction
+    return NextResponse.json({ message: "Successfully joined the group" }, { status: 200 });
+
   } catch (error) {
+    if (client) await client.query("ROLLBACK"); // Ensure rollback on error
     console.error("Join Isusu Error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
   } finally {
-    if (client) client.release(); // Release PostgreSQL client
+    if (client) client.release();
   }
 }

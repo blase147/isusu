@@ -9,18 +9,24 @@ const ManageIsusu = () => {
   const router = useRouter();
   const [copied, setCopied] = useState<string | null>(null);
 
-const handleCopyLink = (groupId: string) => {
-  const groupLink = `${window.location.origin}/dashboard/isusu/${groupId}`;
-  navigator.clipboard.writeText(groupLink)
-    .then(() => {
-      setCopied(groupId);
-      setTimeout(() => setCopied(null), 2000); // Reset after 2 sec
-    })
-    .catch(err => console.error("Failed to copy:", err));
-};
+  const handleCopyLink = (inviteCode: string) => {
+    if (!inviteCode) {
+      console.error("Invite code is missing");
+      return;
+    }
+
+    const inviteLink = `${window.location.origin}/dashboard/join-isusu/${inviteCode}`;
+    navigator.clipboard.writeText(inviteLink)
+      .then(() => {
+        setCopied(inviteCode);
+        setTimeout(() => setCopied(null), 2000);
+      })
+      .catch(err => console.error("Failed to copy:", err));
+  };
 
   interface IsusuGroup {
     id: string;
+    invite_code: string;
     isusuName: string;
     isusuClass: string;
     frequency: string;
@@ -100,22 +106,22 @@ const handleCopyLink = (groupId: string) => {
                     <div className="flex-columns items-left">
                       <p className="text-xl font-bold text-blue-600 w-full">{group.isusuName}</p>
                       {/* Copy Button */}
-  <button
-    onClick={() => handleCopyLink(group.id)}
-    className="flex items-center space-x-2 text-xs text-gray-600 hover:text-blue-600"
-  >
-    {copied === group.id ? (
-      <>
-        <CheckIcon className="w-5 text-green-500" />
-        <span>Copied!</span>
-      </>
-    ) : (
-      <>
-        <ClipboardIcon className="w-5 text-gray-600" />
-        <span>Copy link</span>
-      </>
-    )}
-  </button>
+                      <button
+                        onClick={() => handleCopyLink(group.invite_code)}
+                        className="flex items-center space-x-2 text-xs text-gray-600 hover:text-blue-600"
+                      >
+                        {copied === group.invite_code ? (
+                          <>
+                            <CheckIcon className="w-5 text-green-500" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <ClipboardIcon className="w-5 text-gray-600" />
+                            <span>Copy link</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <Link href={`/dashboard/isusu/${group.id}`} className="flex items-center space-x-2">
                       <span>Members: 20</span><EyeIcon className="w-5 text-gray-600" />
