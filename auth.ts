@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt';
 
 async function getUser(email: string): Promise<User | null> {
   try {
-    const result = await sql<User>`SELECT * FROM user WHERE email=${email}`;
+    const result = await sql<User>`SELECT * FROM users WHERE email=${email}`;
     if (result.rows.length === 0) {
       console.log('No user found for email:', email);
       return null;
