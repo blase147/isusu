@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { signupAction } from '@/app/signup';
+import { useRouter } from 'next/navigation';
 
 export default function SignupForm() {
   const [signup, setSignup] = useState({ name: '', email: '', password: '' });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter(); // For navigation
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -13,11 +16,29 @@ export default function SignupForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+
     try {
-      await signupAction(signup);
-      alert('Signup successful!');
+      const res = await fetch('/api/signup/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signup),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Signup failed');
+      }
+
+      // Redirect to dashboard after successful signup
+      router.push('/dashboard');
+
     } catch (error) {
-      alert((error as Error).message || 'An error occurred');
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -25,6 +46,7 @@ export default function SignupForm() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
         <h1 className="mb-6 text-2xl font-bold text-center text-gray-800">Signup</h1>
+        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -71,8 +93,9 @@ export default function SignupForm() {
           <button
             type="submit"
             className="w-full px-4 py-2 text-white bg-blue-600 rounded-md shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            disabled={loading}
           >
-            Signup
+            {loading ? 'Signing up...' : 'Signup'}
           </button>
         </form>
       </div>
