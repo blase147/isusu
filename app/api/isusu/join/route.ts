@@ -1,4 +1,4 @@
-import { auth } from "@/app/api/auth";
+import { auth } from "@/auth";
 import { pool } from "@/app/lib/db";
 import { NextResponse } from "next/server";
 

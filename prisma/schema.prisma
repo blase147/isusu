@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Users {
+model User {
   id               String         @id @unique @default(uuid())
   email            String         @unique
   name             String?
@@ -32,5 +32,5 @@ model IsusuMembers {
   user_id   String
   joined_at DateTime @default(now())
   group     Isusu    @relation(fields: [group_id], references: [id])
-  users     Users    @relation(fields: [user_id], references: [id])
+  user      User     @relation(fields: [user_id], references: [id])
 }
