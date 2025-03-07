@@ -55,7 +55,7 @@ const ManageIsusu = () => {
   return (
     <div className="p-4 bg-gray-100 min-h-screen">
       {/* Header Buttons */}
-      <div className="flex justify-end items-center space-x-4 w-full">
+      <div className="flex justify-end items-center space-x-4 w-full mt-8">
         <button
           type="button"
           onClick={() => router.push("/dashboard/create-isusu/")}
