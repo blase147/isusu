@@ -151,7 +151,7 @@ const ManageIsusu = () => {
                         )}
                       </button>
                     </div>
-                    <Link href={`/dashboard/isusu/isusu-dashboard/${group.id}`} className="flex items-center space-x-2">
+                    <Link href={`/dashboard/isusu-dashboard/${group.id}`} className="flex items-center space-x-2">
                       <span>Members: {group.members}</span>
                       <EyeIcon className="w-5 text-gray-600" />
                     </Link>
@@ -178,8 +178,8 @@ const ManageIsusu = () => {
                     <div className="flex flex-col">
                       <p className="text-xl font-bold text-blue-600">{group.isusuName}</p>
                     </div>
-                    <Link href={`/dashboard/isusu/${group.id}`} className="flex items-center space-x-2">
-                      <span>Members: {group.members}</span>
+                    <Link href={`/dashboard/isusu-dashboard/${group.id}`} className="flex items-center space-x-2">
+                      <span>Members: {group.members ? group.members : 0}</span>
                       <EyeIcon className="w-5 text-gray-600" />
                     </Link>
                   </div>
