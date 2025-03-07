@@ -18,7 +18,7 @@ const CreateIsusu = () => {
     setError("");
 
     try {
-      const response = await fetch("/api/isusu", {
+      const response = await fetch("/api/isusu/create", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

@@ -49,7 +49,7 @@ const JoinIsusu = () => {
       }
 
       // ✅ Redirect on success
-      router.push("/dashboard/isusu");
+      router.push("/dashboard/isusu/join");
     } catch (err) {
       console.error("Join error:", err);
       setError("Something went wrong. Please try again.");

@@ -8,11 +8,12 @@ datasource db {
 }
 
 model User {
-  id               String         @id @unique @default(uuid())
+  id               String         @id @default(uuid())
   email            String         @unique
   name             String?
   password         String
-  isusuMemberships IsusuMembers[]
+  createdIsusus    Isusu[]        @relation("CreatedIsusus") // Groups the user created
+  isusuMemberships IsusuMembers[] // Groups the user joined
 }
 
 model Isusu {
@@ -23,14 +24,17 @@ model Isusu {
   isusuClass  String
   createdAt   DateTime       @default(now())
   invite_code String         @unique @default(uuid())
+  createdById String         // Now required
+  createdBy   User           @relation("CreatedIsusus", fields: [createdById], references: [id])
   members     IsusuMembers[]
 }
 
+
 model IsusuMembers {
   id        String   @id @default(uuid())
-  group_id  String
-  user_id   String
-  joined_at DateTime @default(now())
-  group     Isusu    @relation(fields: [group_id], references: [id])
-  user      User     @relation(fields: [user_id], references: [id])
+  isusuId   String
+  userId    String
+  joinedAt  DateTime @default(now())
+  isusu     Isusu    @relation(fields: [isusuId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
