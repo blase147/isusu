@@ -3,7 +3,9 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
-export default async function handler(req, res) {
+import { NextApiRequest, NextApiResponse } from 'next';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
 
   const { reference } = req.body;
@@ -16,7 +18,7 @@ export default async function handler(req, res) {
   const data = await response.json();
   if (!data.status) return res.status(400).json({ error: "Payment verification failed" });
 
-  const transaction = await prisma.transaction.findUnique({ where: { reference } });
+  const transaction = await prisma.transaction.findUnique({ where: { reference: reference } });
   if (!transaction || transaction.status !== "pending") return res.status(400).json({ error: "Invalid transaction" });
 
   await prisma.$transaction([

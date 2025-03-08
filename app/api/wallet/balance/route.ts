@@ -12,18 +12,26 @@ export async function GET() {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user transactions
-    const transactions = await prisma.transaction.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" }, // Sort transactions by latest first
+    // Get user details from session
+    const email = session.user.email;
+    if (!email) {
+      return NextResponse.json({ success: false, message: "Email not found" }, { status: 400 });
+    }
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { wallet: true },
     });
+
+    if (!user || !user.wallet) {
+      return NextResponse.json({ success: false, message: "Wallet not found" }, { status: 404 });
+    }
 
     return NextResponse.json({
       success: true,
-      transactions,
+      balance: user.wallet.balance,
     });
   } catch (error) {
-    console.error("Error fetching transactions:", error);
+    console.error(error);
     return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
   }
 }
