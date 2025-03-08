@@ -1,7 +1,7 @@
-import TransactionHistory from '@/app/ui/transaction-history/transaction-history';
+import Transactions from '@/app/ui/transactions/transactions';
 
 export default async function Page() {
-    return ( 
-        <TransactionHistory />
+    return (
+        <Transactions />
     );
 }

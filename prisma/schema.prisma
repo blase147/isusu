@@ -14,6 +14,29 @@ model User {
   password         String
   createdIsusus    Isusu[]        @relation("CreatedIsusus") // Groups the user created
   isusuMemberships IsusuMembers[] // Groups the user joined
+  wallet           Wallet?
+  transactions     Transaction[]  // ✅ Fixed reference to Transaction
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  balance   Float    @default(0.0)
+  createdAt DateTime @default(now()) // ✅ Added createdAt
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  userId     String
+  amount     Float
+  type       String   // "deposit" or "withdrawal"
+  status     String   // "pending", "completed", "failed"
+  reference  String   @unique
+  createdAt  DateTime @default(now()) // ✅ Added createdAt
+
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model Isusu {
@@ -28,7 +51,6 @@ model Isusu {
   createdBy   User           @relation("CreatedIsusus", fields: [createdById], references: [id])
   members     IsusuMembers[]
 }
-
 
 model IsusuMembers {
   id        String   @id @default(uuid())
