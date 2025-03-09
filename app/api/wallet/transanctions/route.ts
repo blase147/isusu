@@ -1,69 +1,69 @@
-// import { PrismaClient } from "@prisma/client";
-// import { auth } from "@/auth";
-// import { Router } from "express";
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client"; // Ensure you're using the singleton instance
 
-// const prisma = new PrismaClient();
-// const router = Router();
+const prisma = new PrismaClient();
+import { auth } from "@/auth";
 
-// /**
-//  * @route   POST /api/wallet/send
-//  * @desc    Transfer funds to another user
-//  * @access  Private
-//  */
-// router.post("/send", auth, async (req, res) => {
-//   try {
-//     const { email, amount } = req.body;
-//     const senderId = req.user.id; // Extracted from auth middleware
+export async function POST(req: Request) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
 
-//     if (!email || !amount || amount <= 0) {
-//       return res.status(400).json({ success: false, message: "Invalid input" });
-//     }
+    const { email, amount } = await req.json();
+    if (!session.user) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+    const senderId = session.user.id; // Extracted from auth session
 
-//     // Find sender and recipient
-//     const sender = await prisma.user.findUnique({
-//       where: { id: senderId },
-//       include: { wallet: true },
-//     });
+    if (!email || !amount || amount <= 0) {
+      return NextResponse.json({ success: false, message: "Invalid input" }, { status: 400 });
+    }
 
-//     const recipient = await prisma.user.findUnique({
-//       where: { email },
-//       include: { wallet: true },
-//     });
+    // Find sender and recipient
+    const sender = await prisma.user.findUnique({
+      where: { id: senderId },
+      include: { wallet: true },
+    });
 
-//     if (!sender || !recipient) {
-//       return res.status(404).json({ success: false, message: "User not found" });
-//     }
+    const recipient = await prisma.user.findUnique({
+      where: { email },
+      include: { wallet: true },
+    });
 
-//     if (!sender.wallet || sender.wallet.balance < amount) {
-//       return res.status(400).json({ success: false, message: "Insufficient balance" });
-//     }
+    if (!sender || !recipient) {
+      return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+    }
 
-//     // Perform the transaction
-//     await prisma.$transaction([
-//       prisma.wallet.update({
-//         where: { userId: sender.id },
-//         data: { balance: { decrement: amount } },
-//       }),
-//       prisma.wallet.update({
-//         where: { userId: recipient.id },
-//         data: { balance: { increment: amount } },
-//       }),
-//       prisma.transaction.create({
-//         data: {
-//           senderId: sender.id,
-//           recipientId: recipient.id,
-//           amount,
-//           type: "TRANSFER",
-//           status: "SUCCESS",
-//         },
-//       }),
-//     ]);
+    if (!sender.wallet || sender.wallet.balance < amount) {
+      return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
+    }
 
-//     return res.status(200).json({ success: true, message: "Money sent successfully" });
-//   } catch (error) {
-//     console.error("Transaction Error:", error);
-//     return res.status(500).json({ success: false, message: "Server error" });
-//   }
-// });
+    // Perform the transaction
+    await prisma.$transaction([
+      prisma.wallet.update({
+        where: { userId: sender.id },
+        data: { balance: { decrement: amount } },
+      }),
+      prisma.wallet.update({
+        where: { userId: recipient.id },
+        data: { balance: { increment: amount } },
+      }),
+      prisma.transaction.create({
+        data: {
+          senderId: sender.id,
+          recipientId: recipient.id,
+          amount,
+          type: "TRANSFER",
+          status: "SUCCESS",
+        },
+      }),
+    ]);
 
-// export default router;
+    return NextResponse.json({ success: true, message: "Money sent successfully" }, { status: 200 });
+  } catch (error) {
+    console.error("Transaction Error:", error);
+    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+  }
+}
