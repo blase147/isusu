@@ -1,22 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const JoinIsusu = () => {
+const JoinIsusuContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Ensure searchParams is available before using it
+  // ✅ Extract inviteCode from URL if present
   useEffect(() => {
-    if (searchParams) {
-      const codeFromURL = searchParams.get("invite_code");
-      if (codeFromURL) {
-        setInviteCode(codeFromURL);
-      }
+    const codeFromURL = searchParams.get("invite_code");
+    if (codeFromURL) {
+      setInviteCode(codeFromURL);
     }
   }, [searchParams]);
 
@@ -88,5 +86,12 @@ const JoinIsusu = () => {
     </div>
   );
 };
+
+// ✅ Wrap in Suspense boundary
+const JoinIsusu = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <JoinIsusuContent />
+  </Suspense>
+);
 
 export default JoinIsusu;
