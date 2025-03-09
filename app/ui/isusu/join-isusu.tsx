@@ -10,11 +10,13 @@ const JoinIsusu = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Extract inviteCode from URL if present
+  // ✅ Ensure searchParams is available before using it
   useEffect(() => {
-    const codeFromURL = searchParams.get("invite_code");
-    if (codeFromURL) {
-      setInviteCode(codeFromURL);
+    if (searchParams) {
+      const codeFromURL = searchParams.get("invite_code");
+      if (codeFromURL) {
+        setInviteCode(codeFromURL);
+      }
     }
   }, [searchParams]);
 
