@@ -1,7 +1,9 @@
-import Deposit from '../../../ui/wallet/deposit/deposit';
+"use client";
 
-export default async function Page() {
-    return (
-        <Deposit  />
-    );
+import dynamic from "next/dynamic";
+
+const DepositNoSSR = dynamic(() => import('../../../ui/wallet/deposit/deposit'), { ssr: false });
+
+export default function Page() {
+    return <DepositNoSSR />;
 }
