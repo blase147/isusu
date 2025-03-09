@@ -1,8 +1,10 @@
 import SideNav from '@/app/ui/dashboard/sidenav';
 import NavBar from '@/app/ui/navbar/navbar';
+import { SessionProvider } from 'next-auth/react';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
+<SessionProvider>
     <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">
       <div className="w-full flex-none md:w-64">
         <SideNav />
@@ -17,5 +19,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </footer>
       </div>
     </div>
+    </SessionProvider>
   );
 }

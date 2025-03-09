@@ -12,10 +12,11 @@ model User {
   email            String         @unique
   name             String?
   password         String
-  createdIsusus    Isusu[]        @relation("CreatedIsusus") // Groups the user created
-  isusuMemberships IsusuMembers[] // Groups the user joined
+  createdIsusus    Isusu[]        @relation("CreatedIsusus")
+  isusuMemberships IsusuMembers[]
   wallet           Wallet?
-  transactions     Transaction[]  // ✅ Fixed reference to Transaction
+  sentTransactions     Transaction[] @relation("SentTransactions")
+  receivedTransactions Transaction[] @relation("ReceivedTransactions")
 }
 
 model Wallet {
@@ -28,16 +29,18 @@ model Wallet {
 }
 
 model Transaction {
-  id         String   @id @default(uuid())
-  userId     String
-  amount     Float
-  type       String   // "deposit" or "withdrawal"
-  status     String   // "pending", "completed", "failed"
-  reference  String   @unique
-  createdAt  DateTime @default(now()) // ✅ Added createdAt
-
-  user       User     @relation(fields: [userId], references: [id])
+  id           String   @id @default(uuid())
+  senderId     String
+  recipientId  String
+  amount       Float
+  type         String
+  status       String
+  sender       User     @relation(name: "SentTransactions", fields: [senderId], references: [id])
+  recipient    User     @relation(name: "ReceivedTransactions", fields: [recipientId], references: [id])
+  createdAt    DateTime @default(now())
 }
+
+
 
 model Isusu {
   id          String         @id @default(uuid())

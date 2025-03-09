@@ -1,31 +1,43 @@
-import { NextAuthConfig } from "next-auth";
+import { NextAuthConfig, Session, User } from "next-auth";
 
-// import CredentialsProvider from "next-auth/providers/credentials";
+declare module "next-auth" {
+  interface User {
+    accessToken?: string;
+  }
+}
 
 export const authConfig: NextAuthConfig = {
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   callbacks: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async authorized({ auth, request: { nextUrl } }: { auth: any, request: { nextUrl: URL } }) {
+    async session({ session, user }) {
+      if (session.user && user) {
+        session.user.id = user.id; // ✅ Ensure session includes user ID
+
+        // 🛠️ Add accessToken if it exists on the user object
+        if ("accessToken" in user) {
+          session.user.accessToken = (user as User).accessToken;
+        }
+      }
+      return session;
+    },
+
+    async authorized({ auth, request }: { auth: Session | null; request: Request }) {
       const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
-      const isOnLandingPage = nextUrl.pathname === '/';
+      const nextUrl = new URL(request.url);
+      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
+      const isOnLandingPage = nextUrl.pathname === "/";
 
       if (isOnDashboard) {
-        // Allow only logged-in users to access the dashboard
-        return isLoggedIn;
+        return isLoggedIn; // ✅ Allow only logged-in users
       } else if (isOnLandingPage) {
-        // Allow both logged-in and non-logged-in users to access the landing page
-        return true;
+        return true; // ✅ Allow everyone
       } else if (isLoggedIn) {
-        // Redirect logged-in users to the dashboard for other restricted pages
-        return Response.redirect(new URL('/dashboard', nextUrl));
+        return Response.redirect(new URL("/dashboard", nextUrl)); // ✅ Redirect logged-in users
       }
 
-      // Allow non-logged-in users access to public pages
-      return true;
+      return true; // ✅ Allow public pages
     },
   },
   providers: [],
