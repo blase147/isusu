@@ -1,19 +1,25 @@
-import { getSession } from "next-auth/react";
+import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { auth } from "@/auth"; // Use auth() to get session
 
 const prisma = new PrismaClient();
 
-export default async function handler(req, res) {
-  if (req.method !== "GET") return res.status(405).json({ error: "Method Not Allowed" });
+export async function GET() {
+  try {
+    // Get session using auth()
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const session = await getSession({ req });
-  if (!session) return res.status(401).json({ error: "Unauthorized" });
+    const userId = session.user?.id;
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const wallet = await prisma.wallet.findUnique({
-    where: { userId: session.user.id },
-  });
+    // Find the wallet
+    const wallet = await prisma.wallet.findUnique({ where: { userId } });
+    if (!wallet) return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
 
-  if (!wallet) return res.status(404).json({ error: "Wallet not found" });
-
-  res.json({ balance: wallet.balance });
+    return NextResponse.json({ balance: wallet.balance }, { status: 200 });
+  } catch (error) {
+    console.error("API Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }
