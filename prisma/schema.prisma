@@ -38,6 +38,7 @@ model Transaction {
   sender       User     @relation(name: "SentTransactions", fields: [senderId], references: [id])
   recipient    User     @relation(name: "ReceivedTransactions", fields: [recipientId], references: [id])
   createdAt    DateTime @default(now())
+  reference String  @unique
 }
 
 

@@ -1,42 +1,88 @@
-import { getSession } from "next-auth/react";
-import { PrismaClient } from "@prisma/client";
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client"; // Use a singleton Prisma instance
 
 const prisma = new PrismaClient();
+import { auth } from "@/auth";
+
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
+export async function POST(req: Request) {
+  try {
+    // Authenticate the user
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const session = await getSession({ req });
-  if (!session) return res.status(401).json({ error: "Unauthorized" });
+    // Parse request body
+    const { amount, bankCode, accountNumber, email } = await req.json();
+    if (!amount || amount <= 0) {
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    }
 
-  const { amount, bankCode, accountNumber } = req.body;
-  if (!amount || amount <= 0) return res.status(400).json({ error: "Invalid amount" });
+    // Check if email is provided
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
 
-  const wallet = await prisma.wallet.findUnique({ where: { userId: session.user.id } });
-  if (!wallet || wallet.balance < amount) return res.status(400).json({ error: "Insufficient balance" });
+    // Find user wallet using email instead of userId
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { wallet: true },
+    });
 
-  const response = await fetch("https://api.paystack.co/transferrecipient", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ type: "nuban", name: session.user.name, bank_code: bankCode, account_number: accountNumber }),
-  });
+    if (!user || !user.wallet || user.wallet.balance < amount) {
+      return NextResponse.json({ error: "Insufficient balance or user not found" }, { status: 400 });
+    }
 
-  const data = await response.json();
-  if (!data.status) return res.status(400).json({ error: "Bank transfer failed" });
-
-  await prisma.$transaction([
-    prisma.wallet.update({ where: { userId: session.user.id }, data: { balance: { decrement: amount } } }),
-    prisma.transaction.create({
-      data: {
-        userId: session.user.id,
-        amount,
-        type: "withdrawal",
-        status: "completed",
-        reference: data.data.recipient_code,
+    // Create Paystack transfer recipient
+    const response = await fetch("https://api.paystack.co/transferrecipient", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json",
       },
-    }),
-  ]);
+      body: JSON.stringify({
+        type: "nuban",
+        name: user.name,
+        bank_code: bankCode,
+        account_number: accountNumber,
+      }),
+    });
 
-  res.json({ message: "Withdrawal successful" });
+    const data = await response.json();
+    if (!data.status) {
+      return NextResponse.json({ error: "Bank transfer failed" }, { status: 400 });
+    }
+
+    // Perform database transactions
+    await prisma.$transaction([
+      prisma.wallet.update({
+        where: { userId: user.id },
+        data: { balance: { decrement: amount } },
+      }),
+      prisma.transaction.create({
+        data: {
+          amount,
+          type: "withdrawal",
+          status: "completed",
+          reference: data.data.recipient_code,
+          sender: { connect: { id: user.id } },
+          recipient: {
+            connectOrCreate: {
+              where: { id: data.data.recipient_code },
+              create: {
+                id: data.data.recipient_code,
+                email: user.email,
+                password: "defaultPassword" // Replace with a secure default password or handle appropriately
+              }
+            }
+          },
+        },
+      }),
+    ]);
+
+    return NextResponse.json({ message: "Withdrawal successful" }, { status: 200 });
+  } catch (error) {
+    console.error("Withdrawal Error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }
