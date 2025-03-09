@@ -1,7 +1,7 @@
-import DepositForm from '../../../ui/wallet/deposit/deposit';
+import Deposit from '../../../ui/wallet/deposit/deposit';
 
 export default async function Page() {
     return (
-        <DepositForm  />
+        <Deposit  />
     );
 }
