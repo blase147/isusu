@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Ensure you're using the singleton instance
+import { PrismaClient } from "@prisma/client"; // Ensure you're using the singleton instance
+const prisma = new PrismaClient();
 import { auth } from "@/auth";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const session = await auth();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
