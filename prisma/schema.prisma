@@ -8,24 +8,25 @@ datasource db {
 }
 
 model User {
-  id               String         @id @default(uuid())
-  email            String         @unique
-  name             String?
-  password         String
-  createdIsusus    Isusu[]        @relation("CreatedIsusus")
-  isusuMemberships IsusuMembers[]
-  wallet           Wallet?
-  sentTransactions     Transaction[] @relation("SentTransactions")
-  receivedTransactions Transaction[] @relation("ReceivedTransactions")
+  id                   String         @id @default(uuid())
+  email                String         @unique
+  name                 String?
+  password             String
+  createdIsusus        Isusu[]        @relation("CreatedIsusus")
+  isusuMemberships     IsusuMembers[]
+  wallet               Wallet?
+  sentTransactions     Transaction[]  @relation("SentTransactions")
+  receivedTransactions Transaction[]  @relation("ReceivedTransactions")
 }
 
 model Wallet {
   id        String   @id @default(uuid())
   userId    String   @unique
   balance   Float    @default(0.0)
-  createdAt DateTime @default(now()) // ✅ Added createdAt
+  createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id])
+  isusu     Isusu?   // ✅ Removed `@relation(references: [id])`
 }
 
 model Transaction {
@@ -38,10 +39,8 @@ model Transaction {
   sender       User     @relation(name: "SentTransactions", fields: [senderId], references: [id])
   recipient    User     @relation(name: "ReceivedTransactions", fields: [recipientId], references: [id])
   createdAt    DateTime @default(now())
-  reference String  @unique
+  reference    String   @unique
 }
-
-
 
 model Isusu {
   id          String         @id @default(uuid())
@@ -51,9 +50,12 @@ model Isusu {
   isusuClass  String
   createdAt   DateTime       @default(now())
   invite_code String         @unique @default(uuid())
-  createdById String         // Now required
+  createdById String
   createdBy   User           @relation("CreatedIsusus", fields: [createdById], references: [id])
   members     IsusuMembers[]
+
+  walletId    String?  @unique // ✅ Added @unique for one-to-one relation
+  wallet      Wallet?  @relation(fields: [walletId], references: [id]) // ✅ Keep references only here
 }
 
 model IsusuMembers {
