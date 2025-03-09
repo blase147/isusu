@@ -53,10 +53,11 @@ export async function POST(req: Request) {
     const memberQuery = `SELECT * FROM "IsusuMembers" WHERE "isusuId" = $1 AND "userId" = $2`;
     const memberResult = await client.query(memberQuery, [group.id, userId]);
 
-    if (memberResult.rowCount > 0) {
+    if ((memberResult.rowCount ?? 0) > 0) {  // Ensure rowCount is always a number
       await client.query("ROLLBACK");
       return NextResponse.json({ error: "already_member" }, { status: 400 });
     }
+
 
     // Generate UUID for new membership
     const newMemberId = uuidv4();
