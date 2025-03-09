@@ -6,12 +6,11 @@ import { PaystackButton } from "react-paystack";
 
 export default function Deposit() {
   const router = useRouter();
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<string>(""); // Allow empty input
   const [publicKey, setPublicKey] = useState<string>("");
   const userEmail = "user@example.com"; // Replace with actual user email
 
   useEffect(() => {
-    // Ensure the environment variable is only accessed on the client side
     setPublicKey(process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "");
   }, []);
 
@@ -31,7 +30,7 @@ export default function Deposit() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ reference: response.reference, amount }),
+        body: JSON.stringify({ reference: response.reference, amount: Number(amount) }),
       });
 
       const result = await verifyResponse.json();
@@ -56,21 +55,21 @@ export default function Deposit() {
           <input
             type="number"
             value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
+            onChange={(e) => setAmount(e.target.value)}
             className="w-full p-2 border rounded mt-1"
             title="Amount"
             placeholder="Enter amount"
-            min={100} // Prevent very low transactions
+            min={1000} // Prevent very low transactions
           />
         </div>
 
-        {/* Only show Paystack Button if publicKey is loaded */}
-        {publicKey && amount > 0 ? (
+        {/* Only show Paystack Button if publicKey is loaded and amount is valid */}
+        {publicKey && Number(amount) >= 100 ? (
           <PaystackButton
             text="Fund Wallet"
             className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 w-full"
             publicKey={publicKey}
-            amount={amount * 100} // Convert Naira to kobo
+            amount={Number(amount) * 100} // Convert Naira to kobo
             email={userEmail}
             currency={currency}
             onSuccess={handleSuccess}

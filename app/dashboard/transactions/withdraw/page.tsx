@@ -1,7 +1,7 @@
-import WithdrawForm from '@/app/ui/wallet/withdraw-form/withdraw-form';
+import Withdraw from '@/app/ui/wallet/withdraw/withdraw';
 
 export default async function Page() {
     return (
-        <WithdrawForm />
+        <Withdraw />
     );
 }

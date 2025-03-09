@@ -1,88 +1,93 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client"; // Use a singleton Prisma instance
+import { NextRequest, NextResponse } from "next/server";
 
-const prisma = new PrismaClient();
-import { auth } from "@/auth";
+const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    // Authenticate the user
-    const session = await auth();
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const body = await req.json();
+    const { amount, bankName, bankCode, accountNumber } = body;
 
-    // Parse request body
-    const { amount, bankCode, accountNumber, email } = await req.json();
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    if (!amount || !bankName || !bankCode || !accountNumber) {
+      return NextResponse.json(
+        { success: false, message: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
-    // Check if email is provided
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    if (!PAYSTACK_SECRET) {
+      return NextResponse.json(
+        { success: false, message: "Payment service not configured" },
+        { status: 500 }
+      );
     }
 
-    // Find user wallet using email instead of userId
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { wallet: true },
-    });
+    console.log("Processing withdrawal:", { amount, bankName, bankCode, accountNumber });
 
-    if (!user || !user.wallet || user.wallet.balance < amount) {
-      return NextResponse.json({ error: "Insufficient balance or user not found" }, { status: 400 });
-    }
-
-    // Create Paystack transfer recipient
-    const response = await fetch("https://api.paystack.co/transferrecipient", {
+    // Step 1: Create Paystack transfer recipient
+    const recipientResponse = await fetch("https://api.paystack.co/transferrecipient", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${PAYSTACK_SECRET}`,
       },
       body: JSON.stringify({
         type: "nuban",
-        name: user.name,
-        bank_code: bankCode,
+        name: bankName,
         account_number: accountNumber,
+        bank_code: bankCode, // ✅ Use the provided bank code
+        currency: "NGN",
       }),
     });
 
-    const data = await response.json();
-    if (!data.status) {
-      return NextResponse.json({ error: "Bank transfer failed" }, { status: 400 });
+    const recipientData = await recipientResponse.json();
+
+    if (!recipientData.status || !recipientData.data?.recipient_code) {
+      console.error("Recipient Creation Failed:", recipientData);
+      return NextResponse.json(
+        { success: false, message: "Failed to create transfer recipient" },
+        { status: 400 }
+      );
     }
 
-    // Perform database transactions
-    await prisma.$transaction([
-      prisma.wallet.update({
-        where: { userId: user.id },
-        data: { balance: { decrement: amount } },
-      }),
-      prisma.transaction.create({
-        data: {
-          amount,
-          type: "withdrawal",
-          status: "completed",
-          reference: data.data.recipient_code,
-          sender: { connect: { id: user.id } },
-          recipient: {
-            connectOrCreate: {
-              where: { id: data.data.recipient_code },
-              create: {
-                id: data.data.recipient_code,
-                email: user.email,
-                password: "defaultPassword" // Replace with a secure default password or handle appropriately
-              }
-            }
-          },
-        },
-      }),
-    ]);
+    const recipientCode = recipientData.data.recipient_code;
 
-    return NextResponse.json({ message: "Withdrawal successful" }, { status: 200 });
+    console.log("Recipient created:", recipientCode);
+
+    // Step 2: Initiate Withdrawal (Transfer)
+    const transferResponse = await fetch("https://api.paystack.co/transfer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${PAYSTACK_SECRET}`,
+      },
+      body: JSON.stringify({
+        source: "balance",
+        amount: Number(amount) * 100, // ✅ Convert to kobo
+        recipient: recipientCode,
+        reason: "Wallet Withdrawal",
+      }),
+    });
+
+    const transferData = await transferResponse.json();
+
+    if (transferData.status) {
+      console.log("Transfer successful:", transferData);
+      return NextResponse.json(
+        { success: true, message: "Withdrawal successful", data: transferData.data },
+        { status: 200 }
+      );
+    } else {
+      console.error("Transfer Failed:", transferData);
+      return NextResponse.json(
+        { success: false, message: transferData.message || "Withdrawal failed" },
+        { status: 400 }
+      );
+    }
   } catch (error) {
     console.error("Withdrawal Error:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    );
   }
 }
