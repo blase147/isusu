@@ -19,7 +19,7 @@ const links = [
     href: '/dashboard/transactions',
     icon: DocumentDuplicateIcon,
   },
-  { name: 'Manage Isusu', href: '/dashboard/manage-isusu', icon: UserGroupIcon },
+  { name: 'Isusu', href: '/dashboard/manage-isusu', icon: UserGroupIcon },
   { name: 'Edit Profile', href: '/dashboard/edit-profile', icon: UserGroupIcon },
 ];
 
