@@ -16,21 +16,34 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "No Isusu ID provided. Please check the URL." }, { status: 400 });
     }
 
-    // Fetch members for the given isusuId
-    const members = await prisma.isusuMembers.findMany({
-      where: { isusuId },
+    // Fetch the Isusu group along with its members based on the isusuId
+    const isusuGroup = await prisma.isusu.findUnique({
+      where: { id: isusuId },
       include: {
-        user: {
-          select: { id: true, name: true, email: true },
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
         },
       },
     });
 
-    return NextResponse.json({ members: members.map((member) => ({
-      id: member.user.id,
-      name: member.user.name || "Unknown",
-      email: member.user.email,
-    })) });
+    if (!isusuGroup) {
+      return NextResponse.json({ error: "Isusu group not found" }, { status: 404 });
+    }
+
+    // Return the group name and members
+    return NextResponse.json({
+      isusuName: isusuGroup.isusuName, // Assuming 'isusuName' is a column in your 'isusu' table
+      members: isusuGroup.members.map((member) => ({
+        id: member.user.id,
+        name: member.user.name || "Unknown",
+        email: member.user.email,
+      })),
+    });
+
   } catch (error) {
     console.error("Database Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

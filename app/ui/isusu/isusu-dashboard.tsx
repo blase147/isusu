@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams } from "next/navigation"; // Import useParams from Next.js navigation
 import { useEffect, useState } from "react";
 import { Button } from "./../button"; // Fixed import
 import Link from "next/link";
@@ -10,37 +10,51 @@ import TransactionTimeline from "./transaction-timeline";
 import MembersList from "./members-list";
 
 const IsusuDashboard = () => {
-  const { id } = useParams(); // Extract id from URL
-  const [isusuName, setIsusuName] = useState("Isusu Group"); // Example default name
-  const [error, setError] = useState<string | null>(null); // State to handle errors
+  const { id } = useParams(); // Get the Isusu group ID from URL params
+  const [isusuName, setIsusuName] = useState<string>(""); // State to hold the Isusu name
+  const [error, setError] = useState<string | null>(null); // State to handle any error
 
   useEffect(() => {
-    // Fetch group name or any other relevant data
-    // Example fetch (Replace with actual API call if needed)
-    const fetchGroupData = async () => {
-      try {
-        // Simulate an API request
-        const response = await fetch(`/api/isusu/fetch${id}`);
-        if (!response.ok) throw new Error("Failed to fetch group details");
-        const data = await response.json();
-        setIsusuName(data.name);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("An unknown error occurred");
-        }
-      }
-    };
-
-    if (id) {
-      fetchGroupData();
+    if (!id) {
+      setError("Isusu ID is missing");
+      return;
     }
+
+const fetchIsusuName = async () => {
+  try {
+    console.log("Fetching Isusu with ID:", id); // Debugging log
+    const response = await fetch(`/api/isusu/fetch?isusuId=${id}`);  // Pass isusuId as query parameter
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch Isusu group");
+    }
+
+    const data = await response.json();
+    console.log("API response data:", data); // Debugging log
+
+    // Check if the response contains created or joined groups
+    const isusu = data.created?.find((group: { id: string; isusuName: string }) => group.id === id) ||
+                  data.joined?.find((group: { id: string; isusuName: string }) => group.id === id);
+
+    if (isusu) {
+      setIsusuName(isusu.isusuName);
+    } else {
+      setError("Isusu group not found");
+      console.error("Isusu group not found");
+    }
+  } catch (err) {
+    console.error("Error fetching Isusu group:", err);
+    setError(err instanceof Error ? err.message : "An unknown error occurred");
+  }
+};
+
+
+    fetchIsusuName();
   }, [id]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <h2 className="text-3xl font-bold text-gray-800">📊 {isusuName}</h2>
+      <h2 className="text-3xl font-bold text-gray-800">📊 {isusuName}</h2> {/* Dynamically displayed Isusu name */}
       {error && <p className="text-red-500 font-semibold">{error}</p>}
 
       {/* Action Buttons */}
@@ -85,7 +99,7 @@ const IsusuDashboard = () => {
 
         {/* Left Pane - Members List */}
         <div className="lg:col-span-1">
-          <MembersList isusuId={Array.isArray(id) ? id[0] : id ?? ''} />
+          <MembersList isusuId={Array.isArray(id) ? id[0] : id ?? ""} />
         </div>
 
         {/* Main Content */}
