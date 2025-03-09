@@ -5,10 +5,10 @@ import { BellIcon, UserCircleIcon } from "@heroicons/react/24/outline";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+
   interface User {
     name: string;
     email: string;
-    // Add other user properties if needed
   }
 
   const [user, setUser] = useState<User | null>(null); // Store user data
@@ -17,12 +17,12 @@ const Navbar = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch("/api/user"); // Replace with your actual API endpoint
+        const response = await fetch("/api/user");
         if (!response.ok) {
           throw new Error("Failed to fetch user data");
         }
         const data = await response.json();
-        setUser(data); // Update user state with fetched data
+        setUser(data);
       } catch (error) {
         console.error("Error fetching user:", error);
       }
@@ -41,7 +41,6 @@ const Navbar = () => {
         {/* Notification Bell */}
         <button className="relative text-gray-600 hover:text-gray-900">
           <BellIcon className="h-6 w-6" />
-          {/* Notification Badge */}
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
             3
           </span>
@@ -64,7 +63,7 @@ const Navbar = () => {
               <div className="px-4 py-2 text-gray-700 font-semibold border-b">
                 {user ? user.name : "Loading..."}
               </div>
-              <div className="px-4 py-2 text-gray-700 font-semibold border-b text">
+              <div className="px-4 py-2 text-gray-700 font-semibold border-b">
                 {user ? user.email : "Loading..."}
               </div>
               <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">

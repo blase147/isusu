@@ -4,7 +4,7 @@ import { auth } from "@/auth"; // Use auth() instead of getServerSession
 
 const prisma = new PrismaClient();
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     console.log("🔍 Received request to send money");
 
@@ -65,8 +65,13 @@ export async function POST(req) {
       recipient = await prisma.user.create({
         data: {
           email: recipientEmailLower,
+          password: "defaultPassword", // Add a default password or generate one
           wallet: { create: { balance: 0 } },
         },
+        include: { wallet: true },
+      });
+      recipient = await prisma.user.findUnique({
+        where: { email: recipientEmailLower },
         include: { wallet: true },
       });
     } else if (!recipient.wallet) {
@@ -74,6 +79,14 @@ export async function POST(req) {
       recipient.wallet = await prisma.wallet.create({
         data: { userId: recipient.id, balance: 0 },
       });
+    }
+
+    if (!recipient) {
+      console.error("❌ Recipient is null after creation attempt");
+      return NextResponse.json(
+        { success: false, message: "Recipient creation failed" },
+        { status: 500 }
+      );
     }
 
     console.log("💰 Checking sender's balance...");
