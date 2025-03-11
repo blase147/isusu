@@ -4,16 +4,23 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "./../button";
 import Link from "next/link";
-import ActivitiesList from "./activities-list";
 import Leaderboard from "./leaderboard";
 import TransactionTimeline from "./transaction-timeline";
 import MembersList from "./members-list";
+import Posts from "./posts";
+import DuesHistory from "./dues-history"; // Import the modal
+import CreatePost from "./create-post";
+import MakeDonation from "./make-donation"; // Import the donation modal
 
 const IsusuDashboard = () => {
-  const { id } = useParams();
+  const params = useParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id ?? ""; // Ensuring id is always a string
+
   const [isusuName, setIsusuName] = useState<string>("");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showDuesHistory, setShowDuesHistory] = useState(false); // Modal state
+  const [showMakeDonation, setShowMakeDonation] = useState(false); // Donation modal state
 
   useEffect(() => {
     if (!id) {
@@ -71,9 +78,9 @@ const IsusuDashboard = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Top Header with Isusu Name and Wallet Balance */}
       <div className="space-x-4 flex flex-row items-center justify-between">
-      <h2 className="text-3xl font-bold text-gray-800">📊 {isusuName}</h2>
-        {/* Group Wallet Section */}
+        <h2 className="text-3xl font-bold text-gray-800">📊 {isusuName}</h2>
         <div className="bg-white p-4 rounded-lg shadow-md text-center">
           <h2 className="text-lg font-semibold">Group Wallet</h2>
           {walletBalance !== null ? (
@@ -82,53 +89,64 @@ const IsusuDashboard = () => {
             <p className="text-gray-500">Loading...</p>
           )}
         </div>
-
-      {error && <p className="text-red-500 font-semibold">{error}</p>}
-
+        {error && <p className="text-red-500 font-semibold">{error}</p>}
       </div>
 
-      <div className="flex gap-4 w-full  bg-gray-100 p-4 rounded-lg flex-wrap">
-        <Link href={`/isusu/${id}/pay-dues`}>
-          <Button className="bg-blue-600 text-white px-4 py-2 rounded-lg">
-            💳 Pay Dues
-          </Button>
-        </Link>
-        <Link href={`/isusu/${id}/donate`}>
-          <Button className="bg-green-600 text-white px-4 py-2 rounded-lg">
-            🎁 Make a Donation
-          </Button>
-        </Link>
-        <Link href={`/isusu/${id}/dues-history`}>
-          <Button className="bg-gray-600 text-white px-4 py-2 rounded-lg">
-            📜 View Dues History
-          </Button>
-        </Link>
+      {/* Action Buttons */}
+      <div className="flex gap-4 w-full bg-gray-100 p-4 rounded-lg flex-wrap">
+        <Button
+          className="bg-green-600 text-white px-4 py-2 rounded-lg"
+          onClick={() => setShowMakeDonation(true)}
+        >
+          🎁 Make a Donation
+        </Button>
+        <Button
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg"
+          onClick={() => setShowDuesHistory(true)}
+        >
+          📜 View Dues History
+        </Button>
         <Link href={`/isusu/${id}/post`}>
           <Button className="bg-purple-600 text-white px-4 py-2 rounded-lg">
             📝 Create Post
           </Button>
         </Link>
         <Link href={`/isusu/${id}/loan-request`}>
-          <Button className="bg-purple-600 text-white px-4 py-2 rounded-lg">
+          <Button className="bg-red-400 text-white px-4 py-2 rounded-lg">
             💵 Request for Loan
           </Button>
         </Link>
-
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Render Modals */}
+      {showDuesHistory && <DuesHistory isusuId={id} onClose={() => setShowDuesHistory(false)} />}
+      {showMakeDonation && <MakeDonation isusuId={id} onClose={() => setShowMakeDonation(false)} />}
+
+      {/* Dashboard Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 bg-orange-100 p-4 rounded-lg">
+        {/* Full-width Leaderboard */}
         <div className="lg:col-span-4">
           <Leaderboard />
         </div>
 
+        {/* Left Pane - Members List */}
         <div className="lg:col-span-1">
-          <MembersList isusuId={Array.isArray(id) ? id[0] : id ?? ""} />
+          <MembersList isusuId={id} />
         </div>
 
+        {/* Main Content: Create Post + Posts (left) & Transaction Timeline (right) */}
         <div className="lg:col-span-3 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ActivitiesList />
-            <TransactionTimeline />
+            {/* Left Section - Create Post & Posts */}
+            <div className="md:col-span-1 space-y-6">
+              <CreatePost /> {/* Ensure Create Post appears first */}
+              <Posts />
+            </div>
+
+            {/* Right Section - Transaction Timeline */}
+            <div className="md:col-span-1">
+              <TransactionTimeline />
+            </div>
           </div>
         </div>
       </div>

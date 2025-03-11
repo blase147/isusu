@@ -1,22 +1,24 @@
 import { NextResponse } from "next/server";
 
 // Dummy data (Replace with database query)
-const leaderboardData: Record<string, { name: string; contributions: number }[]> = {
-  "1674271e-1ce9-42bb-990d-2dce1ba33ea6": [
-    { name: "John Doe", contributions: 500 },
-    { name: "Jane Smith", contributions: 450 },
-  ],
-};
+const leaderboardData = [
+  { name: "John Doe", contributions: 500 },
+  { name: "Jane Smith", contributions: 450 },
+];
 
-// Next.js App Router API format
+// GET request handler for leaderboard
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const isusuId = searchParams.get("isusuId");
 
-  if (!isusuId) {
-    return NextResponse.json({ error: "Invalid Isusu ID" }, { status: 400 });
+  if (isusuId) {
+    const index = parseInt(isusuId);
+    if (isNaN(index) || index < 0 || index >= leaderboardData.length) {
+      return NextResponse.json({ error: "Invalid Isusu ID" }, { status: 400 });
+    }
+    return NextResponse.json({ leaderboard: [leaderboardData[index]] }, { status: 200 });
   }
 
-  const leaderboard = leaderboardData[isusuId] || [];
-  return NextResponse.json({ leaderboard }, { status: 200 });
+  // Return all data if no isusuId is provided
+  return NextResponse.json({ leaderboard: leaderboardData }, { status: 200 });
 }

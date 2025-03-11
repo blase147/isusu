@@ -3,15 +3,15 @@ import { useEffect, useState } from "react";
 export default function Leaderboard() {
   interface Leader {
     name: string;
-    points: number;
+    contributions: number;
   }
 
   const [leaders, setLeaders] = useState<Leader[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/leaderboard")
+    fetch("/api/isusu/leaderboard") // ✅ Fixed API endpoint
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -19,7 +19,7 @@ export default function Leaderboard() {
         return response.json();
       })
       .then((data) => {
-        setLeaders(data);
+        setLeaders(data.leaderboard); // ✅ Corrected data extraction
         setLoading(false);
       })
       .catch((error) => {
@@ -37,7 +37,7 @@ export default function Leaderboard() {
       <ul>
         {leaders.map((leader, index) => (
           <li key={index} className="border-b py-2">
-            {leader.name} - {leader.points} points
+            {leader.name} - {leader.contributions} contributions
           </li>
         ))}
       </ul>

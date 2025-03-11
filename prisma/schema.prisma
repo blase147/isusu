@@ -37,9 +37,11 @@ model Transaction {
   recipientId String
   senderId    String
   reference   String   @unique
+  description String?  // ✅ New optional description field
   recipient   User     @relation("ReceivedTransactions", fields: [recipientId], references: [id])
   sender      User     @relation("SentTransactions", fields: [senderId], references: [id])
 }
+
 
 model Isusu {
   id          String         @id @default(uuid())
