@@ -24,7 +24,7 @@ export default function WalletBalance() {
       }
     }
     fetchBalance();
-  }, []);
+  }, [updateBalance]);
 
   return (
     <div className="p-4 border rounded shadow">

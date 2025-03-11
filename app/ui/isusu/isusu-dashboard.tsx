@@ -71,10 +71,23 @@ const IsusuDashboard = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <div className="space-x-4 flex flex-row items-center justify-between">
       <h2 className="text-3xl font-bold text-gray-800">📊 {isusuName}</h2>
+        {/* Group Wallet Section */}
+        <div className="bg-white p-4 rounded-lg shadow-md text-center">
+          <h2 className="text-lg font-semibold">Group Wallet</h2>
+          {walletBalance !== null ? (
+            <p className="text-xl font-bold">N{walletBalance.toLocaleString()}</p>
+          ) : (
+            <p className="text-gray-500">Loading...</p>
+          )}
+        </div>
+
       {error && <p className="text-red-500 font-semibold">{error}</p>}
 
-      <div className="flex gap-4 w-full justify-between bg-gray-100 p-4 rounded-lg flex-wrap">
+      </div>
+
+      <div className="flex gap-4 w-full  bg-gray-100 p-4 rounded-lg flex-wrap">
         <Link href={`/isusu/${id}/pay-dues`}>
           <Button className="bg-blue-600 text-white px-4 py-2 rounded-lg">
             💳 Pay Dues
@@ -101,15 +114,6 @@ const IsusuDashboard = () => {
           </Button>
         </Link>
 
-        {/* Group Wallet Section */}
-        <div className="bg-white p-4 rounded-lg shadow-md text-center">
-          <h2 className="text-lg font-semibold">Group Wallet</h2>
-          {walletBalance !== null ? (
-            <p className="text-xl font-bold">N{walletBalance.toLocaleString()}</p>
-          ) : (
-            <p className="text-gray-500">Loading...</p>
-          )}
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
