@@ -14,32 +14,31 @@ model User {
   password             String
   createdIsusus        Isusu[]        @relation("CreatedIsusus")
   isusuMemberships     IsusuMembers[]
-  wallet               Wallet?
-  sentTransactions     Transaction[]  @relation("SentTransactions")
   receivedTransactions Transaction[]  @relation("ReceivedTransactions")
+  sentTransactions     Transaction[]  @relation("SentTransactions")
+  walletId             String?        @unique  // ✅ Keep walletId for direct access
+  wallet               Wallet?        @relation("UserWallet", fields: [walletId], references: [id]) // ✅ Fields only here
 }
 
 model Wallet {
   id        String   @id @default(uuid())
-  userId    String   @unique
-  balance   Float    @default(0.0)
+  balance   Float    @default(0.00)
   createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id])
-  isusu     Isusu?   // ✅ Removed `@relation(references: [id])`
+  user      User?    @relation("UserWallet")  // ✅ No fields/references here
+  isusu     Isusu?   @relation("IsusuWallet") // ✅ No fields/references here
 }
 
 model Transaction {
-  id           String   @id @default(uuid())
-  senderId     String
-  recipientId  String
-  amount       Float
-  type         String
-  status       String
-  sender       User     @relation(name: "SentTransactions", fields: [senderId], references: [id])
-  recipient    User     @relation(name: "ReceivedTransactions", fields: [recipientId], references: [id])
-  createdAt    DateTime @default(now())
-  reference    String   @unique
+  id          String   @id @default(uuid())
+  amount      Float
+  type        String
+  status      String
+  createdAt   DateTime @default(now())
+  recipientId String
+  senderId    String
+  reference   String   @unique
+  recipient   User     @relation("ReceivedTransactions", fields: [recipientId], references: [id])
+  sender      User     @relation("SentTransactions", fields: [senderId], references: [id])
 }
 
 model Isusu {
@@ -53,16 +52,15 @@ model Isusu {
   createdById String
   createdBy   User           @relation("CreatedIsusus", fields: [createdById], references: [id])
   members     IsusuMembers[]
-
-  walletId    String?  @unique // ✅ Added @unique for one-to-one relation
-  wallet      Wallet?  @relation(fields: [walletId], references: [id]) // ✅ Keep references only here
+  walletId    String?        @unique  // ✅ Keep walletId for direct access
+  wallet      Wallet?        @relation("IsusuWallet", fields: [walletId], references: [id]) // ✅ Fields only here
 }
 
 model IsusuMembers {
-  id        String   @id @default(uuid())
-  isusuId   String
-  userId    String
-  joinedAt  DateTime @default(now())
-  isusu     Isusu    @relation(fields: [isusuId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  id       String   @id @default(uuid())
+  isusuId  String
+  joinedAt DateTime @default(now())
+  userId   String
+  isusu    Isusu    @relation(fields: [isusuId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 }

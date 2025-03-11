@@ -33,7 +33,7 @@ CREATE TABLE "IsusuMembers" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- AddForeignKey
-ALTER TABLE "IsusuMembers" ADD CONSTRAINT "IsusuMembers_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Isusu"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "IsusuMembers" ADD CONSTRAINT "IsusuMembers_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "Isusu"("id") ON DELETE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "IsusuMembers" ADD CONSTRAINT "IsusuMembers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "IsusuMembers" ADD CONSTRAINT "IsusuMembers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE;

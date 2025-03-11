@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { auth } from "@/auth"; // Use auth() instead of getServerSession
+import { auth } from "@/auth";
 
 const prisma = new PrismaClient();
 
@@ -8,115 +8,96 @@ export async function POST(req: Request) {
   try {
     console.log("🔍 Received request to send money");
 
-    // Get authenticated session
     const session = await auth();
     if (!session || !session.user?.email) {
-      console.error("❌ Unauthorized request: No valid session found");
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
     const senderEmail = session.user.email.toLowerCase();
-    const { recipientEmail, amount } = await req.json();
-    console.log("📩 Parsed Request Data:", { recipientEmail, amount });
+    const requestBody = await req.json();
 
-    // Validate inputs
-    if (!recipientEmail || typeof recipientEmail !== "string") {
-      console.error("⚠️ Invalid recipient email");
-      return NextResponse.json(
-        { success: false, message: "Invalid recipient email" },
-        { status: 400 }
-      );
-    }
-    if (!amount || isNaN(amount) || amount <= 0) {
-      console.error("⚠️ Invalid amount:", amount);
-      return NextResponse.json(
-        { success: false, message: "Invalid amount" },
-        { status: 400 }
-      );
+    console.log("📩 Parsed Request Data:", requestBody);
+
+    const { recipientEmail, groupId, amount, isIsusuGroup = false } = requestBody;
+    const isIsusu = Boolean(isIsusuGroup) || Boolean(groupId);
+
+    console.log("📌 isIsusuGroup:", isIsusu);
+    console.log("📌 recipientEmail:", recipientEmail || "N/A");
+    console.log("📌 groupId:", groupId || "N/A");
+    console.log("📌 amount:", amount);
+
+    if (!amount || typeof amount !== "number" || amount <= 0) {
+      return NextResponse.json({ success: false, message: "Invalid transaction amount" }, { status: 400 });
     }
 
-    const recipientEmailLower = recipientEmail.toLowerCase();
-
-    console.log("🔍 Searching for sender in the database...");
     const sender = await prisma.user.findUnique({
       where: { email: senderEmail },
       include: { wallet: true },
     });
 
     if (!sender || !sender.wallet) {
-      console.error("❌ Sender not found or has no wallet:", senderEmail);
-      return NextResponse.json(
-        { success: false, message: "Sender not found or has no wallet" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, message: "Sender not found or has no wallet" }, { status: 404 });
     }
 
-    console.log("🔍 Searching for recipient in the database...");
+    if (!isIsusu && !recipientEmail) {
+      return NextResponse.json({ success: false, message: "Recipient email is required for individual transfers" }, { status: 400 });
+    }
+
+    if (isIsusu) {
+      if (!groupId || typeof groupId !== "string") {
+        return NextResponse.json({ success: false, message: "Invalid group ID" }, { status: 400 });
+      }
+
+      const isusu = await prisma.isusu.findUnique({
+        where: { id: groupId },
+        include: { wallet: true },
+      });
+
+      if (!isusu || !isusu.wallet) {
+        return NextResponse.json({ success: false, message: "Isusu group not found or has no wallet" }, { status: 404 });
+      }
+
+      if (sender.wallet.balance < amount) {
+        return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
+      }
+
+      await prisma.$transaction([
+        prisma.wallet.update({ where: { id: sender.wallet.id }, data: { balance: { decrement: amount } } }),
+        prisma.wallet.update({ where: { id: isusu.wallet.id }, data: { balance: { increment: amount } } }),
+      ]);
+
+      return NextResponse.json({ success: true, message: "Funds transferred to Isusu group wallet" }, { status: 200 });
+    }
+
+    const recipientEmailLower = recipientEmail.toLowerCase();
     let recipient = await prisma.user.findUnique({
       where: { email: recipientEmailLower },
       include: { wallet: true },
     });
 
     if (!recipient) {
-      console.error("❌ Recipient not found, creating user and wallet...");
       recipient = await prisma.user.create({
-        data: {
-          email: recipientEmailLower,
-          password: "defaultPassword", // Add a default password or generate one
-          wallet: { create: { balance: 0 } },
-        },
-        include: { wallet: true },
-      });
-      recipient = await prisma.user.findUnique({
-        where: { email: recipientEmailLower },
+        data: { email: recipientEmailLower, password: "defaultPassword", wallet: { create: { balance: 0 } } },
         include: { wallet: true },
       });
     } else if (!recipient.wallet) {
-      console.error("❌ Recipient found but has no wallet, creating wallet...");
       recipient.wallet = await prisma.wallet.create({
-        data: { userId: recipient.id, balance: 0 },
+        data: { user: { connect: { id: recipient.id } }, balance: 0 },
       });
     }
 
-    if (!recipient) {
-      console.error("❌ Recipient is null after creation attempt");
-      return NextResponse.json(
-        { success: false, message: "Recipient creation failed" },
-        { status: 500 }
-      );
-    }
-
-    console.log("💰 Checking sender's balance...");
     if (sender.wallet.balance < amount) {
-      console.error("❌ Insufficient balance:", sender.wallet.balance);
-      return NextResponse.json(
-        { success: false, message: "Insufficient balance" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
     }
 
-    console.log("🔄 Processing transaction...");
     await prisma.$transaction([
-      prisma.wallet.update({
-        where: { userId: sender.id },
-        data: { balance: { decrement: amount } },
-      }),
-      prisma.wallet.update({
-        where: { userId: recipient.id },
-        data: { balance: { increment: amount } },
-      }),
+      prisma.wallet.update({ where: { id: sender.wallet.id }, data: { balance: { decrement: amount } } }),
+      prisma.wallet.update({ where: { id: recipient.wallet!.id }, data: { balance: { increment: amount } } }),
     ]);
 
-    console.log("✅ Transaction successfully completed!");
-    return NextResponse.json({ success: true, message: "Transfer successful" });
+    return NextResponse.json({ success: true, message: "Transfer successful" }, { status: 200 });
   } catch (error) {
     console.error("🚨 Error:", error);
-    return NextResponse.json(
-      { success: false, message: error instanceof Error ? error.message : "Unknown server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: "An unexpected error occurred" }, { status: 500 });
   }
 }

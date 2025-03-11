@@ -21,11 +21,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "All fields are required." }, { status: 400 });
     }
 
-    // Ensure prisma.user is defined (model should be singular, not user)
-    if (!prisma.user) {
-      throw new Error("Prisma model `user` is undefined. Check your Prisma schema.");
-    }
-
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
@@ -39,9 +34,21 @@ export async function POST(req: NextRequest) {
       throw new Error("Password hashing failed.");
     }
 
-    // Create new user
+    // Create new user and wallet in a transaction
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword },
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        wallet: {
+          create: {
+            balance: 0.0, // Ensure wallet starts with default balance
+          },
+        },
+      },
+      include: {
+        wallet: true, // Include wallet details in response
+      },
     });
 
     return NextResponse.json({ user }, { status: 201 });

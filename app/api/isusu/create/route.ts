@@ -34,26 +34,42 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Optional: Prevent duplicate Isusu names
-    const existingIsusu = await prisma.isusu.findUnique({ where: { id: isusuName } }); // Assuming isusuName is unique and can be used as id
+    // Ensure unique Isusu name
+    const existingIsusu = await prisma.isusu.findFirst({
+      where: { isusuName },
+    });
+
     if (existingIsusu) {
       return NextResponse.json({ error: "Isusu group with this name already exists" }, { status: 400 });
     }
 
-    // Create Isusu and add creator as a member
-    const newIsusu = await prisma.isusu.create({
-      data: {
-        isusuName,
-        isusuClass,
-        frequency,
-        milestone,
-        createdById: user.id, // Assign user as creator
-        members: {
-          create: {
-            user: { connect: { id: user.id } }, // Add creator as first member
+    // Create Isusu and associated wallet in a transaction
+    const newIsusu = await prisma.$transaction(async (tx) => {
+      const isusu = await tx.isusu.create({
+        data: {
+          isusuName,
+          isusuClass,
+          frequency,
+          milestone,
+          createdById: user.id,
+          members: {
+            create: {
+              userId: user.id,
+            },
           },
         },
-      },
+      });
+
+      const wallet = await tx.wallet.create({
+        data: {
+          balance: 0,
+          isusu: {
+            connect: { id: isusu.id },
+          },
+        },
+      });
+
+      return { ...isusu, wallet };
     });
 
     return NextResponse.json(newIsusu, { status: 201 });
@@ -62,4 +78,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to create Isusu group" }, { status: 500 });
   }
 }
-

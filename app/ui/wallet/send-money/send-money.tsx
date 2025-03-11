@@ -1,51 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SendMoney() {
   const router = useRouter();
+
+  const [recipientType, setRecipientType] = useState<"user" | "group">("user");
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState("");
+  const [groups, setGroups] = useState<{ id: string; isusuName: string }[]>([]);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSendMoney = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchGroups = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/isusu/fetch`);
+        if (!response.ok) throw new Error("Failed to fetch groups");
+
+        const data = await response.json();
+        setGroups([...data.created, ...data.joined]);
+      } catch {
+        setError("Failed to load groups.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGroups();
+  }, []);
+
+  const handleSendMoney = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
 
-    if (!recipientEmail || !amount) {
-      alert("Please fill in all fields.");
+    if (!amount || isNaN(+amount) || +amount <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    if (recipientType === "user" && !recipientEmail.trim()) {
+      alert("Please enter the recipient's email.");
+      return;
+    }
+
+    if (recipientType === "group" && !selectedGroup) {
+      alert("Please select a group.");
       return;
     }
 
     setLoading(true);
 
-    // Debugging logs before request
-    console.log("📩 Sending Request:", { recipientEmail, amount });
+    const payload: { amount: number; recipientEmail?: string; groupId?: string } = { amount: +amount };
+
+    if (recipientType === "user") {
+      payload.recipientEmail = recipientEmail;
+    } else {
+      payload.groupId = selectedGroup;
+    }
 
     try {
       const response = await fetch("/api/wallet/send", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Ensures cookies are sent with the request
-        body: JSON.stringify({
-          recipientEmail, // ✅ Ensure this matches the backend variable name
-          amount: parseFloat(amount), // ✅ Convert to float safely
-        }),
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        alert(`₦${amount} successfully sent to ${recipientEmail}`);
+        alert(
+          `₦${amount} successfully sent to ${
+            recipientType === "user" ? recipientEmail : `group ${selectedGroup}`
+          }`
+        );
         router.push("/dashboard/transactions");
       } else {
-        alert(result.message || "Transaction failed.");
+        setError(result.message || "Transaction failed.");
       }
-    } catch (error) {
-      console.error("🚨 Error sending money:", error);
-      alert("An error occurred. Please try again.");
+    } catch {
+      setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -54,20 +92,61 @@ export default function SendMoney() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
       <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-center mb-4">Send Money</h2>
-
+        {error && <p className="text-red-500 text-center">{error}</p>}
         <form onSubmit={handleSendMoney} className="space-y-4">
           <div>
-            <label className="block text-gray-700">Recipient Email</label>
-            <input
-              type="email"
-              value={recipientEmail}
-              onChange={(e) => setRecipientEmail(e.target.value)}
-              placeholder="Enter recipient email"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
-              required
-            />
+            <label htmlFor="recipientType" className="block text-gray-700">
+              Send To
+            </label>
+            <select
+              id="recipientType"
+              title="Recipient Type"
+              value={recipientType}
+              onChange={(e) => setRecipientType(e.target.value as "user" | "group")}
+              className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300"
+            >
+              <option value="user">User (via Email)</option>
+              <option value="group">Group (Isusu)</option>
+            </select>
           </div>
+
+          {recipientType === "user" && (
+            <div>
+              <label className="block text-gray-700">Recipient Email</label>
+              <input
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                placeholder="Enter recipient email"
+                className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300"
+                required
+              />
+            </div>
+          )}
+
+          {recipientType === "group" && (
+            <div>
+              <label className="block text-gray-700">Select Group</label>
+              <select
+                title="Select Group"
+                value={selectedGroup}
+                onChange={(e) => setSelectedGroup(e.target.value)}
+                className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300"
+                required
+              >
+                <option value="">-- Select Group --</option>
+                {groups.length > 0 ? (
+                  groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.isusuName}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No groups available</option>
+                )}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-gray-700">Amount (₦)</label>
@@ -76,7 +155,7 @@ export default function SendMoney() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Enter amount"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+              className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300"
               required
             />
           </div>
@@ -89,16 +168,6 @@ export default function SendMoney() {
             {loading ? "Sending..." : "Send Money"}
           </button>
         </form>
-
-        {/* Back to Transactions Button */}
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => router.push("/dashboard/transactions")}
-            className="text-blue-600 hover:underline"
-          >
-            Back to Transactions
-          </button>
-        </div>
       </div>
     </div>
   );
