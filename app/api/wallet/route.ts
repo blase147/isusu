@@ -11,7 +11,7 @@ export async function GET() {
     const userId = session.user?.id;
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId } });
+    const wallet = await prisma.wallet.findUnique({ where: { id: userId } });
     if (!wallet) return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
 
     return NextResponse.json({ balance: wallet.balance }, { status: 200 });

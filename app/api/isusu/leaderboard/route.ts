@@ -1,19 +1,22 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { isusuId } = req.query;
+// Dummy data (Replace with database query)
+const leaderboardData: Record<string, { name: string; contributions: number }[]> = {
+  "1674271e-1ce9-42bb-990d-2dce1ba33ea6": [
+    { name: "John Doe", contributions: 500 },
+    { name: "Jane Smith", contributions: 450 },
+  ],
+};
 
-  if (!isusuId || typeof isusuId !== "string") {
-    return res.status(400).json({ error: "Invalid Isusu ID" });
+// Next.js App Router API format
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const isusuId = searchParams.get("isusuId");
+
+  if (!isusuId) {
+    return NextResponse.json({ error: "Invalid Isusu ID" }, { status: 400 });
   }
 
-  const leaderboardData: Record<string, { name: string; contributions: number }[]> = {
-    "1674271e-1ce9-42bb-990d-2dce1ba33ea6": [
-      { name: "John Doe", contributions: 500 },
-      { name: "Jane Smith", contributions: 450 },
-    ],
-  };
-
   const leaderboard = leaderboardData[isusuId] || [];
-  return res.status(200).json({ leaderboard });
+  return NextResponse.json({ leaderboard }, { status: 200 });
 }
