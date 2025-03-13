@@ -4,25 +4,48 @@ import { auth } from "@/auth";
 import schedule, { Job } from "node-schedule";
 
 const prisma = new PrismaClient();
-const activeSchedules: Record<string, Job> = {}; // Track active jobs
+const activeSchedules: Record<string, Job> = {}; // Store active jobs
 
-// ✅ API Route to Check Active Jobs
-export async function GET() {
-  return NextResponse.json({ activeJobs: Object.keys(activeSchedules) });
+// Restore Jobs on Server Restart
+async function restoreScheduledJobs() {
+  console.log("🔹 Restoring scheduled jobs...");
+  const activeIsusus = await prisma.isusu.findMany({
+    where: { isActive: true },
+    select: { id: true, frequency: true },
+  });
+
+  activeIsusus.forEach(({ id, frequency }) => {
+    const cronExpression = frequencyMap[frequency.toLowerCase()];
+    if (cronExpression) {
+      activeSchedules[id] = schedule.scheduleJob(cronExpression, () => {
+        console.log(`🔹 [Restored] Running Isusu deduction for ${id} at ${new Date().toISOString()}`);
+      });
+    }
+  });
+
+  console.log("✅ Restored jobs:", Object.keys(activeSchedules));
 }
 
-// ✅ Activation Route (POST)
+restoreScheduledJobs(); // Run on startup
+
+const frequencyMap: Record<string, string> = {
+  daily: "0 0 * * *",
+  weekly: "0 0 * * 0",
+  biweekly: "0 0 1,15 * *",
+  monthly: "0 0 1 * *",
+  quarterly: "0 0 1 */3 *",
+  annually: "0 0 1 1 *",
+};
+
 export async function POST(req: Request) {
   try {
     console.log("🔹 Starting Isusu Activation");
 
-    // Step 1: Authorization check
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Step 2: Fetch the user
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true },
@@ -31,21 +54,10 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const userId = user.id;
-    console.log("🔹 Fetched User ID:", userId);
+    const { groupId: isusuId } = await req.json();
 
-    // Step 3: Parse request body
-    const bodyText = await req.text();
-    if (!bodyText) return NextResponse.json({ error: "Request body is missing" }, { status: 400 });
+    if (!isusuId) return NextResponse.json({ error: "groupId is required" }, { status: 400 });
 
-    let isusuId: string;
-    try {
-      isusuId = JSON.parse(bodyText).groupId;
-      if (!isusuId) throw new Error("groupId is required");
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
-    }
-
-    // Step 4: Fetch Isusu data
     const isusu = await prisma.isusu.findUnique({
       where: { id: isusuId },
       include: { members: true },
@@ -54,124 +66,127 @@ export async function POST(req: Request) {
     if (!isusu) return NextResponse.json({ error: "Isusu not found" }, { status: 404 });
 
     if (isusu.createdById !== userId) {
-      return NextResponse.json({ error: "Only the owner can activate this" }, { status: 403 });
+      return NextResponse.json({ error: "Only the Isusu owner can activate this" }, { status: 403 });
     }
 
-    // Step 5: Activate Isusu
+    // Activate Isusu
     const updatedIsusu = await prisma.isusu.update({
       where: { id: isusuId },
       data: { invite_code: undefined, isActive: true, startDate: new Date() },
     });
 
-    console.log("✅ Isusu Activated:", updatedIsusu);
+    console.log("✅ Updated Isusu:", updatedIsusu);
 
-    // Step 6: Calculate End Date
-    const isusuDuration: Record<string, number> = {
-      weekend_oringo: 7,
-      uwamgbede: 14,
-      payday_flex: 30,
-      club_merchants: 90,
-      doublers_arena: 180,
-      party_mongers: 365,
-    };
-
-    const durationDays = isusuDuration[isusu.isusuClass.toLowerCase()];
-    if (!durationDays) {
-      return NextResponse.json({ error: "Invalid isusuClass" }, { status: 400 });
-    }
-
+    // Set end date
+    const durationDays = { weekend_oringo: 7, uwamgbede: 14, payday_flex: 30, club_merchants: 90, doublers_arena: 180, party_mongers: 365 }[isusu.isusuClass.toLowerCase()];
     const endDate = new Date();
+    if (durationDays === undefined) {
+      return NextResponse.json({ error: "Invalid Isusu class" }, { status: 400 });
+    }
     endDate.setDate(endDate.getDate() + durationDays);
 
-    console.log("🔹 Isusu end date:", endDate);
-
-    // Step 7: Map Frequency to Cron
-    const frequencyMap: Record<string, string> = {
-      daily: "0 0 * * *",
-      weekly: "0 0 * * 0",
-      biweekly: "0 0 1,15 * *",
-      monthly: "0 0 1 * *",
-      quarterly: "0 0 1 */3 *",
-      annually: "0 0 1 1 *",
-    };
-
     const cronExpression = frequencyMap[isusu.frequency.toLowerCase()];
-    if (!cronExpression) {
-      return NextResponse.json({ error: "Invalid frequency" }, { status: 400 });
-    }
+    if (!cronExpression) return NextResponse.json({ error: "Invalid frequency" }, { status: 400 });
 
-    // Step 8: Cancel Previous Job (if exists)
+    // Cancel previous jobs
     if (activeSchedules[isusuId]) {
       activeSchedules[isusuId].cancel();
-      delete activeSchedules[isusuId];
-      console.log("🔹 Cancelled previous job for:", isusuId);
+      console.log("🔹 Cancelled previous job for Isusu:", isusuId);
     }
 
-    // Step 9: Schedule New Isusu Job
-    activeSchedules[isusuId] = schedule.scheduleJob(cronExpression, async () => {
-      console.log(`🔹 Running deduction for Isusu: ${isusuId}`);
+    // Schedule new deductions
+activeSchedules[isusuId] = schedule.scheduleJob(cronExpression, async () => {
+  console.log(`🔹 Running Isusu deduction for ${isusuId} at`, new Date().toISOString());
 
-      if (new Date() >= endDate) {
-        console.log("⛔ Isusu ended. Stopping deductions.");
-        activeSchedules[isusuId].cancel();
-        delete activeSchedules[isusuId];
+  const now = new Date();
+  if (now >= endDate) {
+    console.log(`⛔ Isusu ${isusuId} duration has ended. Stopping deductions.`);
+    activeSchedules[isusuId].cancel();
+    delete activeSchedules[isusuId];
 
-        await prisma.isusu.update({
-          where: { id: isusuId },
-          data: { isActive: false },
-        });
-
-        return;
-      }
-
-      for (const member of isusu.members) {
-        await processDeduction(member.userId, isusu);
-      }
+    await prisma.isusu.update({
+      where: { id: isusuId },
+      data: { isActive: false },
     });
 
-    console.log("✅ Job Scheduled:", cronExpression);
+    return;
+  }
 
-    // Step 10: Return Status
-    return NextResponse.json({ isActive: true, endDate }, { status: 200 });
+  console.log(`🔹 Fetching members for Isusu ${isusuId}...`);
+  console.log(`🔹 Members count: ${isusu.members.length}`);
+
+  for (const member of isusu.members) {
+    console.log(`🔹 Processing deduction for user ${member.userId}...`);
+
+    try {
+      const wallet = await prisma.wallet.findUnique({
+        where: { id: member.userId },
+      });
+
+      if (!wallet) {
+        console.warn(`⛔ Wallet not found for user ${member.userId}`);
+        continue;
+      }
+
+      console.log(`💰 Wallet balance: ${wallet.balance}, Required: ${isusu.milestone}`);
+
+      if (wallet.balance < isusu.milestone) {
+        console.warn(`⛔ Insufficient balance for user ${member.userId}`);
+        continue;
+      }
+
+      console.log(`🔹 Deducting ${isusu.milestone} from user ${member.userId}`);
+
+      // Deduct balance
+      await prisma.wallet.update({
+        where: { id: wallet.id },
+        data: { balance: { decrement: isusu.milestone } },
+      });
+
+      // Create transaction
+      const transaction = await prisma.transaction.create({
+        data: {
+          senderId: member.userId,
+          isusuGroupId: isusuId,
+          amount: isusu.milestone,
+          type: "WITHDRAWAL",
+          status: "SUCCESS",
+          reference: `ISUSU_${isusuId}_${Date.now()}`,
+          description: `Isusu deduction for ${isusu.frequency}`,
+          isIsusu: true,
+        },
+      });
+
+      console.log(`✅ Transaction created:`, transaction);
+    } catch (err) {
+      console.error(`⛔ Error processing deduction for user ${member.userId}:`, err);
+    }
+  }
+});
+
+
+    console.log("✅ Job scheduled successfully");
+
+    return NextResponse.json({ isActive: true, endDate, activeJobs: Object.keys(activeSchedules) }, { status: 200 });
   } catch (error) {
     console.error("⛔ Error activating Isusu:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// ✅ Deduction Function with Retry Logic
-async function processDeduction(userId: string, isusu: { id: string; milestone: number; frequency: string; members: { userId: string }[] }) {
-  try {
-    const wallet = await prisma.wallet.findUnique({
-      where: { id: userId },
-    });
+// GET route to check active jobs
+export async function GET() {
+  return NextResponse.json({ activeJobs: Object.keys(activeSchedules) }, { status: 200 });
+}
 
-    if (!wallet || wallet.balance < isusu.milestone) {
-      console.warn(`⛔ Insufficient balance for user ${userId}`);
-      return;
-    }
+// Manually Trigger Job
+export async function PUT(req: Request) {
+  const { isusuId } = await req.json();
 
-    await prisma.$transaction([
-      prisma.wallet.update({
-        where: { id: wallet.id },
-        data: { balance: { decrement: isusu.milestone } },
-      }),
-      prisma.transaction.create({
-        data: {
-          senderId: userId,
-          isusuGroupId: isusu.id,
-          amount: isusu.milestone,
-          type: "WITHDRAWAL",
-          status: "SUCCESS",
-          reference: `ISUSU_${isusu.id}_${Date.now()}`,
-          description: `Isusu deduction for ${isusu.frequency}`,
-          isIsusu: true,
-        },
-      }),
-    ]);
-
-    console.log(`✅ Deducted ${isusu.milestone} from user ${userId}`);
-  } catch (err) {
-    console.error(`⛔ Deduction failed for user ${userId}:`, err);
+  if (!isusuId || !activeSchedules[isusuId]) {
+    return NextResponse.json({ error: "Job not found" }, { status: 404 });
   }
+
+  activeSchedules[isusuId].invoke();
+  return NextResponse.json({ message: "Job triggered manually" }, { status: 200 });
 }
