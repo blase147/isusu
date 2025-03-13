@@ -78,7 +78,7 @@ const ManageIsusu = () => {
     };
 
     fetchIsusuGroups();
-    const interval = setInterval(fetchIsusuGroups, 100000);
+    const interval = setInterval(fetchIsusuGroups, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -147,70 +147,73 @@ const ManageIsusu = () => {
       </div>
 
       {/* Content */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(activeTab === "created" ? createdIsusus : joinedIsusus).length > 0 ? (
-          (activeTab === "created" ? createdIsusus : joinedIsusus).map((group) => (
-            <div key={group.id} className="bg-white p-6 rounded-lg shadow-lg w-[350px]">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <p className="text-xl font-bold text-blue-600">{group.isusuName}</p>
+<div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-2 md:px-4">
+  {(activeTab === "created" ? createdIsusus : joinedIsusus).length > 0 ? (
+    (activeTab === "created" ? createdIsusus : joinedIsusus).map((group) => (
+      <div key={group.id} className="bg-white p-6 rounded-lg shadow-lg w-full sm:w-[320px] md:w-[350px] mx-auto">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <p className="text-xl font-bold text-blue-600">{group.isusuName}</p>
 
-                  {/* Invite Link */}
-                  {activeTab === "created" && (
-                    <button
-                      onClick={() => handleCopyLink(group.invite_code, group.id)}
-                      className="flex items-center space-x-2 text-xs text-gray-600 hover:text-blue-600"
-                    >
-                      {copiedInvite === group.id ? (
-                        <>
-                          <CheckIcon className="w-5 text-green-500" />
-                          <span>Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <ClipboardIcon className="w-5 text-gray-600" />
-                          <span>Copy link</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
+            {/* Invite Link */}
+            {activeTab === "created" && (
+              <button
+                onClick={() => handleCopyLink(group.invite_code, group.id)}
+                className="flex items-center space-x-2 text-xs text-gray-600 hover:text-blue-600"
+              >
+                {copiedInvite === group.id ? (
+                  <>
+                    <CheckIcon className="w-5 text-green-500" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <ClipboardIcon className="w-5 text-gray-600" />
+                    <span>Copy link</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
 
-                <Link href={`/dashboard/isusu-dashboard/${group.id}`} className="flex items-center space-x-2">
-                  <span>Members: {Array.isArray(group.members) ? group.members.length : group.members ?? 0}</span>
-                  <EyeIcon className="w-5 text-gray-600" />
-                </Link>
-              </div>
+          <Link href={`/dashboard/isusu-dashboard/${group.id}`} className="flex items-center space-x-2">
+            <span>Members: {Array.isArray(group.members) ? group.members.length : group.members ?? 0}</span>
+            <EyeIcon className="w-5 text-gray-600" />
+          </Link>
+        </div>
 
-              <p className="text-lg font-semibold text-black mb-4 text-center">{group.isusuClass}</p>
+        <p className="text-lg font-semibold text-black mb-4 text-center">{group.isusuClass}</p>
 
-              <div className="flex justify-between">
-                <p className="text-gray-700"><strong>Frequency:</strong> {group.frequency}</p>
-                <p className="text-gray-700"><strong>Milestone:</strong> ₦{group.milestone}</p>
-              </div>
+        <div className="flex justify-between">
+          <p className="text-gray-700"><strong>Frequency:</strong> {group.frequency}</p>
+          <p className="text-gray-700"><strong>Milestone:</strong> ₦{group.milestone}</p>
+        </div>
 
-              {/* Activation Button (Only for Created Isusu) */}
-              {activeTab === "created" ? (
-                <button
-                  type="button"
-                  onClick={() => toggleActivation(group.id)}
-                  className={`mt-4 w-full py-2 rounded-lg text-white ${
-                    activeGroups[group.id] ? "bg-green-600" : "bg-gray-400"
-                  }`}
-                >
-                  {activeGroups[group.id] ? "Activated" : "Activate"}
-                </button>
-              ) : (
-                activeGroups[group.id] && (
-                  <p className="mt-4 text-center text-green-600 font-bold">Activated</p>
-                )
-              )}
-            </div>
-          ))
+        {/* Activation Button (Only for Created Isusu) */}
+        {activeTab === "created" ? (
+          <button
+            type="button"
+            onClick={() => toggleActivation(group.id)}
+            className={`mt-4 w-full py-2 rounded-lg text-white ${
+              activeGroups[group.id] ? "bg-green-600" : "bg-gray-400"
+            }`}
+          >
+            {activeGroups[group.id] ? "Activated" : "Activate"}
+          </button>
         ) : (
-          <p className="text-center text-gray-500 w-full">No {activeTab === "created" ? "created" : "joined"} Isusu groups yet.</p>
+          activeGroups[group.id] && (
+            <p className="mt-4 text-center text-green-600 font-bold">Activated</p>
+          )
         )}
       </div>
+    ))
+  ) : (
+    <p className="text-center text-gray-500 w-full">
+      No {activeTab === "created" ? "created" : "joined"} Isusu groups yet.
+    </p>
+  )}
+</div>
+
     </div>
   );
 };
