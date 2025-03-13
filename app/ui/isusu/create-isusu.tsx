@@ -88,9 +88,11 @@ const CreateIsusu = () => {
               <option value="weekly">Weekend Oringo</option>
               <option value="biweekly">Uwamgbede</option>
               <option value="monthly">PayDay Flex</option>
-              <option value="Quarterly">Weekly Club Merchants</option>
-              <option value="Annually">Annual Grocery Merchants</option>
-              <option value="ChosenTakesItAll">Chosen takes it all</option>
+              <option value="Quarterly">Club Merchants</option>
+              <option value="half_year">Doublers Arena</option>
+              <option value="Annually">Party Mongers</option>
+              <option value="grocery">Grocery Merchants</option>
+              <option value="Chosen_takes_it_all">Chosen takes it all</option>
             </select>
           </div>
 

@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized, session data missing" }, { status: 401 });
     }
 
-    // Step 2: Fetch the user ID using the email from the session
+    // Step 2: Fetch the user ID
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true },
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
 
     console.log("🔹 Found Isusu group:", isusu);
 
-    // Step 5: Check if the user is the creator of the Isusu group
+    // Step 5: Check if the user is the creator
     if (isusu.createdById !== userId) {
       console.log(`⛔ User ${userId} is not the owner of Isusu ${isusuId}`);
       return NextResponse.json({ error: "Only the Isusu owner can activate this" }, { status: 403 });
@@ -80,12 +80,33 @@ export async function POST(req: Request) {
     console.log("🔹 Updating Isusu: setting invite_code to null & activating...");
     const updatedIsusu = await prisma.isusu.update({
       where: { id: isusuId },
-      data: { invite_code: undefined, isActive: true },
+      data: { invite_code: undefined, isActive: true, startDate: new Date() },
     });
 
     console.log("✅ Updated Isusu:", updatedIsusu);
 
-    // Step 7: Frequency to Cron Expression Mapping
+    // Step 7: Determine collection duration
+    const isusuDuration: Record<string, number> = {
+      daily: 1,
+      weekly: 7,
+      biweekly: 14,
+      monthly: 30,
+      quarterly: 90,
+      half_year: 180,
+      annually: 365,
+    };
+
+    const durationDays = isusuDuration[isusu.isusuClass.toLowerCase()];
+    if (!durationDays) {
+      console.log("⛔ Invalid isusuClass value:", isusu.isusuClass);
+      return NextResponse.json({ error: "Invalid isusuClass value" }, { status: 400 });
+    }
+
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + durationDays);
+    console.log("🔹 Isusu end date:", endDate);
+
+    // Step 8: Frequency to Cron Expression Mapping
     const frequencyMap: Record<string, string> = {
       daily: "0 0 * * *",
       weekly: "0 0 * * 0",
@@ -103,15 +124,29 @@ export async function POST(req: Request) {
 
     console.log("🔹 Scheduling job with cron expression:", cronExpression);
 
-    // Step 8: Cancel previous schedules if any
+    // Step 9: Cancel previous schedules if any
     if (activeSchedules[isusuId]) {
       activeSchedules[isusuId].cancel();
       console.log("🔹 Cancelled previous job for Isusu:", isusuId);
     }
 
-    // Step 9: Schedule new Isusu deductions
+    // Step 10: Schedule new Isusu deductions
     activeSchedules[isusuId] = schedule.scheduleJob(cronExpression, async () => {
       console.log(`🔹 Running Isusu deduction for ${isusuId}`);
+
+      const now = new Date();
+      if (now >= endDate) {
+        console.log("⛔ Isusu duration has ended. Stopping deductions.");
+        activeSchedules[isusuId].cancel();
+        delete activeSchedules[isusuId];
+
+        await prisma.isusu.update({
+          where: { id: isusuId },
+          data: { isActive: false },
+        });
+
+        return;
+      }
 
       for (const member of isusu.members) {
         try {
@@ -153,17 +188,8 @@ export async function POST(req: Request) {
 
     console.log("✅ Job scheduled successfully");
 
-    // Step 10: Verify and return the updated status
-    const finalIsusu = await prisma.isusu.findUnique({
-      where: { id: isusuId },
-      select: { isActive: true },
-    });
-
-    console.log("🔹 Final isActive status:", finalIsusu?.isActive);
-    console.log("Returning isActive value:", finalIsusu?.isActive);
-
-
-    return NextResponse.json({ isActive: finalIsusu?.isActive ?? true }, { status: 200 });
+    // Step 11: Return updated status
+    return NextResponse.json({ isActive: true, endDate }, { status: 200 });
   } catch (error) {
     console.error("⛔ Error activating Isusu:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

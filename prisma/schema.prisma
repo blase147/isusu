@@ -71,7 +71,7 @@ model Isusu {
   milestone     Float
   isusuClass    String
   createdAt     DateTime               @default(now())
-  invite_code   String?                 @unique
+  invite_code   String?                 @unique @default(uuid())
   createdById   String
   isActive      Boolean                @default(false) // ✅ Track activation state
   createdBy     User                   @relation("CreatedIsusus", fields: [createdById], references: [id])
@@ -81,6 +81,7 @@ model Isusu {
   transactions  Transaction[]           @relation("IsusuTransactions")
   timelines     TransactionTimeline[]   @relation("IsusuTimelines")
   contributionAmount Float?
+  startDate  DateTime?  // Ensure this field exists
 }
 
 model IsusuMembers {
