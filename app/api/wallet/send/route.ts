@@ -61,14 +61,29 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
       }
 
+      const transactionRef = `TX-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
       await prisma.$transaction([
         prisma.wallet.update({ where: { id: sender.wallet.id }, data: { balance: { decrement: amount } } }),
         prisma.wallet.update({ where: { id: isusu.wallet.id }, data: { balance: { increment: amount } } }),
+        prisma.transaction.create({
+          data: {
+            amount,
+            type: "TRANSFER",
+            status: "SUCCESS",
+            senderId: sender.id,
+            recipientId: undefined,
+            isusuGroupId: isusu.id,
+            reference: transactionRef,
+            description: `Donation to Isusu Group: ${isusu.isusuName}`,
+          },
+        }),
       ]);
 
       return NextResponse.json({ success: true, message: "Funds transferred to Isusu group wallet" }, { status: 200 });
     }
 
+    // Handle individual transfers
     const recipientEmailLower = recipientEmail.toLowerCase();
     let recipient = await prisma.user.findUnique({
       where: { email: recipientEmailLower },
@@ -90,9 +105,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
     }
 
+    const transactionRef = `TX-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
     await prisma.$transaction([
       prisma.wallet.update({ where: { id: sender.wallet.id }, data: { balance: { decrement: amount } } }),
       prisma.wallet.update({ where: { id: recipient.wallet!.id }, data: { balance: { increment: amount } } }),
+      prisma.transaction.create({
+        data: {
+          amount,
+          type: "TRANSFER",
+          status: "SUCCESS",
+          senderId: sender.id,
+          recipientId: recipient.id,
+          reference: transactionRef,
+          description: `Money transfer to ${recipient.email}`,
+        },
+      }),
     ]);
 
     return NextResponse.json({ success: true, message: "Transfer successful" }, { status: 200 });

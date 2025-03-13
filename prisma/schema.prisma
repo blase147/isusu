@@ -18,6 +18,7 @@ model User {
   sentTransactions     Transaction[]  @relation("SentTransactions")
   walletId             String?        @unique  // ✅ Keep walletId for direct access
   wallet               Wallet?        @relation("UserWallet", fields: [walletId], references: [id]) // ✅ Fields only here
+  timelines            TransactionTimeline[]  @relation("UserTimelines")
 }
 
 model Wallet {
@@ -31,31 +32,55 @@ model Wallet {
 model Transaction {
   id          String   @id @default(uuid())
   amount      Float
-  type        String
-  status      String
+  type        String   // e.g., TRANSFER, DEPOSIT, WITHDRAWAL
+  status      String   // e.g., PENDING, SUCCESS, FAILED
   createdAt   DateTime @default(now())
-  recipientId String
+  recipientId String?  // Nullable for group transactions
   senderId    String
   reference   String   @unique
-  description String?  // ✅ New optional description field
-  recipient   User     @relation("ReceivedTransactions", fields: [recipientId], references: [id])
+  description String?  // Optional transaction description
+  isIsusu     Boolean  @default(false)  // Flag for Isusu transactions
+  isusuGroupId String? // Nullable if not an Isusu transaction
+
+  recipient   User?    @relation("ReceivedTransactions", fields: [recipientId], references: [id])
   sender      User     @relation("SentTransactions", fields: [senderId], references: [id])
+  isusuGroup  Isusu?   @relation("IsusuTransactions", fields: [isusuGroupId], references: [id]) // ✅ Fixed relation name
+
+  transactionTimeline TransactionTimeline[]
 }
 
+model TransactionTimeline {
+  id             String   @id @default(uuid())
+  transactionId  String
+  userId         String
+  isusuGroupId   String?
+  amount         Float
+  transactionType String
+  status        String
+  description   String?
+
+  transaction  Transaction @relation(fields: [transactionId], references: [id])
+  user         User        @relation("UserTimelines", fields: [userId], references: [id])
+  isusuGroup   Isusu?      @relation("IsusuTimelines", fields: [isusuGroupId], references: [id]) // ✅ Fixed relation name
+}
 
 model Isusu {
-  id          String         @id @default(uuid())
-  isusuName   String
-  frequency   String
-  milestone   Float
-  isusuClass  String
-  createdAt   DateTime       @default(now())
-  invite_code String         @unique @default(uuid())
-  createdById String
-  createdBy   User           @relation("CreatedIsusus", fields: [createdById], references: [id])
-  members     IsusuMembers[]
-  walletId    String?        @unique  // ✅ Keep walletId for direct access
-  wallet      Wallet?        @relation("IsusuWallet", fields: [walletId], references: [id]) // ✅ Fields only here
+  id            String                 @id @default(uuid())
+  isusuName     String
+  frequency     String
+  milestone     Float
+  isusuClass    String
+  createdAt     DateTime               @default(now())
+  invite_code   String?                 @unique
+  createdById   String
+  isActive      Boolean                @default(false) // ✅ Track activation state
+  createdBy     User                   @relation("CreatedIsusus", fields: [createdById], references: [id])
+  members       IsusuMembers[]
+  walletId      String?                 @unique
+  wallet        Wallet?                 @relation("IsusuWallet", fields: [walletId], references: [id])
+  transactions  Transaction[]           @relation("IsusuTransactions")
+  timelines     TransactionTimeline[]   @relation("IsusuTimelines")
+  contributionAmount Float?
 }
 
 model IsusuMembers {

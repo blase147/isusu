@@ -38,7 +38,7 @@ export default function TransactionTimeline() {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
-      <h2 className="text-xl font-bold mb-4">Transaction Timeline</h2>
+      <h2 className="text-xl font-bold mb-4">Transactions</h2>
       <ul className="divide-y divide-gray-300">
         {transactions.length > 0 ? (
           transactions.map((tx) => (

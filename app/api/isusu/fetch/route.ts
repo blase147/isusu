@@ -37,6 +37,7 @@ export async function GET() {
         milestone: true,
         createdById: true,
         invite_code: true, // Ensure invite_code is included
+        isActive: true,
         members: {
           select: {
             userId: true, // Fetch user IDs of members

@@ -84,12 +84,12 @@ const CreateIsusu = () => {
               required
             >
               <option value="">Select Isusu Class</option>
-              <option value="EveryDayMarket">EveryDay Market</option>
-              <option value="WeekendOringo">Weekend Oringo</option>
-              <option value="Uwamgbede">Uwamgbede</option>
-              <option value="PayDayFlex">PayDay Flex</option>
-              <option value="QuarterMerchants">Weekly Club Merchants</option>
-              <option value="AnnualGroceryMerchants">Annual Grocery Merchants</option>
+              <option value="daily">EveryDay Market</option>
+              <option value="weekly">Weekend Oringo</option>
+              <option value="biweekly">Uwamgbede</option>
+              <option value="monthly">PayDay Flex</option>
+              <option value="Quarterly">Weekly Club Merchants</option>
+              <option value="Annually">Annual Grocery Merchants</option>
               <option value="ChosenTakesItAll">Chosen takes it all</option>
             </select>
           </div>
