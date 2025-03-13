@@ -4,57 +4,45 @@ import { auth } from "@/auth";
 import schedule, { Job } from "node-schedule";
 
 const prisma = new PrismaClient();
-const activeSchedules: Record<string, Job> = {}; // Store active jobs
+const activeSchedules: Record<string, Job> = {}; // Track active jobs
 
+// ✅ API Route to Check Active Jobs
+export async function GET() {
+  return NextResponse.json({ activeJobs: Object.keys(activeSchedules) });
+}
+
+// ✅ Activation Route (POST)
 export async function POST(req: Request) {
   try {
     console.log("🔹 Starting Isusu Activation");
 
     // Step 1: Authorization check
     const session = await auth();
-    console.log("🔹 Fetched Session:", session);
-
     if (!session?.user?.email) {
-      console.log("⛔ Session missing user data. Returning unauthorized.");
-      return NextResponse.json({ error: "Unauthorized, session data missing" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Step 2: Fetch the user ID
+    // Step 2: Fetch the user
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true },
     });
 
-    if (!user) {
-      console.log("⛔ User not found for email:", session.user.email);
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const userId = user.id;
     console.log("🔹 Fetched User ID:", userId);
 
     // Step 3: Parse request body
     const bodyText = await req.text();
-    console.log("🔹 Raw request body:", bodyText);
+    if (!bodyText) return NextResponse.json({ error: "Request body is missing" }, { status: 400 });
 
-    if (!bodyText) {
-      console.log("⛔ Request body is missing.");
-      return NextResponse.json({ error: "Request body is missing" }, { status: 400 });
-    }
-
-    let isusuId: string | undefined;
+    let isusuId: string;
     try {
-      const body = JSON.parse(bodyText);
-      isusuId = body.groupId;
-      console.log("🔹 Parsed groupId:", isusuId);
-    } catch (err) {
-      console.log("⛔ Error parsing JSON:", err);
+      isusuId = JSON.parse(bodyText).groupId;
+      if (!isusuId) throw new Error("groupId is required");
+    } catch {
       return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
-    }
-
-    if (!isusuId) {
-      console.log("⛔ groupId is required.");
-      return NextResponse.json({ error: "groupId is required" }, { status: 400 });
     }
 
     // Step 4: Fetch Isusu data
@@ -63,49 +51,41 @@ export async function POST(req: Request) {
       include: { members: true },
     });
 
-    if (!isusu) {
-      console.log(`⛔ Isusu not found for ID: ${isusuId}`);
-      return NextResponse.json({ error: "Isusu not found" }, { status: 404 });
-    }
+    if (!isusu) return NextResponse.json({ error: "Isusu not found" }, { status: 404 });
 
-    console.log("🔹 Found Isusu group:", isusu);
-
-    // Step 5: Check if the user is the creator
     if (isusu.createdById !== userId) {
-      console.log(`⛔ User ${userId} is not the owner of Isusu ${isusuId}`);
-      return NextResponse.json({ error: "Only the Isusu owner can activate this" }, { status: 403 });
+      return NextResponse.json({ error: "Only the owner can activate this" }, { status: 403 });
     }
 
-    // Step 6: Update Isusu to activate it
-    console.log("🔹 Updating Isusu: setting invite_code to null & activating...");
+    // Step 5: Activate Isusu
     const updatedIsusu = await prisma.isusu.update({
       where: { id: isusuId },
       data: { invite_code: undefined, isActive: true, startDate: new Date() },
     });
 
-    console.log("✅ Updated Isusu:", updatedIsusu);
+    console.log("✅ Isusu Activated:", updatedIsusu);
 
-    // Step 7: Determine collection duration
+    // Step 6: Calculate End Date
     const isusuDuration: Record<string, number> = {
-      Weekend_Oringo: 7,
-      Uwamgbede: 14,
-      PayDay_Flex: 30,
-      Club_Merchants: 90,
-      Doublers_Arena: 180,
-      Party_Mongers: 365,
+      weekend_oringo: 7,
+      uwamgbede: 14,
+      payday_flex: 30,
+      club_merchants: 90,
+      doublers_arena: 180,
+      party_mongers: 365,
     };
 
     const durationDays = isusuDuration[isusu.isusuClass.toLowerCase()];
     if (!durationDays) {
-      console.log("⛔ Invalid isusuClass value:", isusu.isusuClass);
-      return NextResponse.json({ error: "Invalid isusuClass value" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid isusuClass" }, { status: 400 });
     }
 
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + durationDays);
+
     console.log("🔹 Isusu end date:", endDate);
 
-    // Step 8: Frequency to Cron Expression Mapping
+    // Step 7: Map Frequency to Cron
     const frequencyMap: Record<string, string> = {
       daily: "0 0 * * *",
       weekly: "0 0 * * 0",
@@ -117,25 +97,22 @@ export async function POST(req: Request) {
 
     const cronExpression = frequencyMap[isusu.frequency.toLowerCase()];
     if (!cronExpression) {
-      console.log("⛔ Invalid frequency value:", isusu.frequency);
-      return NextResponse.json({ error: "Invalid frequency value" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid frequency" }, { status: 400 });
     }
 
-    console.log("🔹 Scheduling job with cron expression:", cronExpression);
-
-    // Step 9: Cancel previous schedules if any
+    // Step 8: Cancel Previous Job (if exists)
     if (activeSchedules[isusuId]) {
       activeSchedules[isusuId].cancel();
-      console.log("🔹 Cancelled previous job for Isusu:", isusuId);
+      delete activeSchedules[isusuId];
+      console.log("🔹 Cancelled previous job for:", isusuId);
     }
 
-    // Step 10: Schedule new Isusu deductions
+    // Step 9: Schedule New Isusu Job
     activeSchedules[isusuId] = schedule.scheduleJob(cronExpression, async () => {
-      console.log(`🔹 Running Isusu deduction for ${isusuId}`);
+      console.log(`🔹 Running deduction for Isusu: ${isusuId}`);
 
-      const now = new Date();
-      if (now >= endDate) {
-        console.log("⛔ Isusu duration has ended. Stopping deductions.");
+      if (new Date() >= endDate) {
+        console.log("⛔ Isusu ended. Stopping deductions.");
         activeSchedules[isusuId].cancel();
         delete activeSchedules[isusuId];
 
@@ -148,49 +125,53 @@ export async function POST(req: Request) {
       }
 
       for (const member of isusu.members) {
-        try {
-          const wallet = await prisma.wallet.findUnique({
-            where: { id: member.userId },
-          });
-
-          if (!wallet || wallet.balance < isusu.milestone) {
-            console.warn(`⛔ Insufficient balance for user ${member.userId}`);
-            continue;
-          }
-
-          // Deduct balance
-          await prisma.wallet.update({
-            where: { id: wallet.id },
-            data: { balance: { decrement: isusu.milestone } },
-          });
-
-          // Create transaction
-          await prisma.transaction.create({
-            data: {
-              senderId: member.userId,
-              isusuGroupId: isusuId,
-              amount: isusu.milestone,
-              type: "WITHDRAWAL",
-              status: "SUCCESS",
-              reference: `ISUSU_${isusuId}_${Date.now()}`,
-              description: `Isusu deduction for ${isusu.frequency}`,
-              isIsusu: true,
-            },
-          });
-
-          console.log(`✅ Deducted ${isusu.milestone} from user ${member.userId}`);
-        } catch (err) {
-          console.error(`⛔ Failed to process deduction for user ${member.userId}:`, err);
-        }
+        await processDeduction(member.userId, isusu);
       }
     });
 
-    console.log("✅ Job scheduled successfully");
+    console.log("✅ Job Scheduled:", cronExpression);
 
-    // Step 11: Return updated status
+    // Step 10: Return Status
     return NextResponse.json({ isActive: true, endDate }, { status: 200 });
   } catch (error) {
     console.error("⛔ Error activating Isusu:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// ✅ Deduction Function with Retry Logic
+async function processDeduction(userId: string, isusu: { id: string; milestone: number; frequency: string; members: { userId: string }[] }) {
+  try {
+    const wallet = await prisma.wallet.findUnique({
+      where: { id: userId },
+    });
+
+    if (!wallet || wallet.balance < isusu.milestone) {
+      console.warn(`⛔ Insufficient balance for user ${userId}`);
+      return;
+    }
+
+    await prisma.$transaction([
+      prisma.wallet.update({
+        where: { id: wallet.id },
+        data: { balance: { decrement: isusu.milestone } },
+      }),
+      prisma.transaction.create({
+        data: {
+          senderId: userId,
+          isusuGroupId: isusu.id,
+          amount: isusu.milestone,
+          type: "WITHDRAWAL",
+          status: "SUCCESS",
+          reference: `ISUSU_${isusu.id}_${Date.now()}`,
+          description: `Isusu deduction for ${isusu.frequency}`,
+          isIsusu: true,
+        },
+      }),
+    ]);
+
+    console.log(`✅ Deducted ${isusu.milestone} from user ${userId}`);
+  } catch (err) {
+    console.error(`⛔ Deduction failed for user ${userId}:`, err);
   }
 }
