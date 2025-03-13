@@ -87,13 +87,12 @@ export async function POST(req: Request) {
 
     // Step 7: Determine collection duration
     const isusuDuration: Record<string, number> = {
-      Daily: 1,
-      Weekly: 7,
-      Biweekly: 14,
-      Monthly: 30,
-      Quarterly: 90,
-      Half_year: 180,
-      Annually: 365,
+      Weekend_Oringo: 7,
+      Uwamgbede: 14,
+      PayDay_Flex: 30,
+      Club_Merchants: 90,
+      Doublers_Arena: 180,
+      Party_Mongers: 365,
     };
 
     const durationDays = isusuDuration[isusu.isusuClass.toLowerCase()];

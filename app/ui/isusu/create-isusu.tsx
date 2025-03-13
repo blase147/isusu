@@ -84,14 +84,13 @@ const CreateIsusu = () => {
               required
             >
               <option value="">Select Isusu Class</option>
-              <option value="Daily">EveryDay Market</option>
-              <option value="Weekly">Weekend Oringo</option>
-              <option value="Biweekly">Uwamgbede</option>
-              <option value="Monthly">PayDay Flex</option>
-              <option value="Quarterly">Club Merchants</option>
-              <option value="Half_year">Doublers Arena</option>
-              <option value="Annually">Party Mongers</option>
-              <option value="Grocery">Grocery Merchants</option>
+              <option value="Weekend_Oringo">Weekend Oringo</option>
+              <option value="Uwamgbede">Uwamgbede</option>
+              <option value="PayDay_Flex">PayDay Flex</option>
+              <option value="Club_Merchants">Club Merchants</option>
+              <option value="Doublers_Arena">Doubler&apos;s Arena</option>
+              <option value="Party_Mongers">Party Mongers</option>
+              <option value="Grocery_Merchants">Grocery Merchants</option>
               <option value="Chosen_takes_it_all">Chosen takes it all</option>
             </select>
           </div>
@@ -116,7 +115,7 @@ const CreateIsusu = () => {
           </div>
 
           <div>
-            <label className="block font-semibold">Milestone Amount</label>
+            <label className="block font-semibold">Contribution Amount</label>
             <input
               type="number"
               className="w-full border p-2 rounded-md mt-1"
