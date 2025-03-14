@@ -27,7 +27,7 @@ new Worker(
       await prisma.transaction.create({
         data: {
           senderId: userId,
-          isusuGroupId: isusuId,
+          isusuId: isusuId,
           amount,
           type: "WITHDRAWAL",
           status: "SUCCESS",
