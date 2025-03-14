@@ -85,6 +85,16 @@ export async function POST(req: Request) {
           },
         }),
       ]);
+      // ✅ ADD THIS TO LINK ISUSU PURCHASES
+      prisma.isusuPurchase.create({
+        data: {
+          userId: sender.id,
+          isusuId: isusu.id,
+          amount: amount,
+          reference: transactionRef,
+          status: "COMPLETED", // You can use "PENDING" if you want to verify before completion
+        },
+      });
 
       return NextResponse.json({ success: true, message: "Funds transferred to Isusu group wallet" }, { status: 200 });
     }

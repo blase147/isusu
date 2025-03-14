@@ -19,7 +19,7 @@ const JoinIsusuContent = () => {
   }, [searchParams]);
 
   const handleJoin = async () => {
-    setError(""); // Clear previous errors
+    setError("");
     if (!inviteCode.trim()) {
       setError("Please enter a valid invite code.");
       return;
@@ -30,30 +30,19 @@ const JoinIsusuContent = () => {
       const res = await fetch("/api/isusu/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteCode }), // ✅ Match backend `inviteCode` key
+        body: JSON.stringify({ inviteCode }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        if (data.error === "already_member") {
-          setError("You are already a member of this group.");
-        } else if (data.error === "owner") {
-          setError("You own this group and cannot join as a member.");
-        } else if (data.error === "Group not found") {
-          setError("Invalid invite code. Please check and try again.");
-        } else {
-          setError(data.error || "Failed to join group.");
-        }
+        setError(data.error || "Failed to join group.");
         return;
       }
 
-      // ✅ Redirect to the joined Isusu group's page
-      if (data.groupId) {
-        router.push(`/dashboard/isusu/${data.groupId}`);
-      } else {
-        setError("Something went wrong. Group ID missing.");
-      }
+      console.log("Redirecting to:", `/dashboard/isusu/isusu-dashboard/${data.groupId}`); // ✅ Debugging
+      router.push(`/dashboard/isusu-dashboard/${data.groupId}`); // ✅ Navigate to group page
+
     } catch (err) {
       console.error("Join error:", err);
       setError("Something went wrong. Please try again.");
@@ -61,6 +50,7 @@ const JoinIsusuContent = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">

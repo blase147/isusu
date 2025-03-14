@@ -3,8 +3,10 @@
 import { BackwardIcon } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // ✅ Import useRouter
 
 const CreateIsusu = () => {
+  const router = useRouter(); // ✅ Initialize router
   const [isusuName, setIsusuName] = useState("");
   const [frequency, setFrequency] = useState("");
   const [milestone, setMilestone] = useState("");
@@ -19,28 +21,26 @@ const CreateIsusu = () => {
 
     try {
       const response = await fetch("/api/isusu/create", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                isusuName,
-                frequency,
-                milestone: Number(milestone), // Convert to number
-                isusuClass,
-              }),
-            });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isusuName,
+          frequency,
+          milestone: Number(milestone), // Convert to number
+          isusuClass,
+        }),
+      });
 
-      const text = await response.text(); // Read response as text
-      const data = text ? JSON.parse(text) : null; // Parse only if not empty
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : null;
 
       if (!response.ok) {
         throw new Error(data?.error || "Failed to create Isusu group");
       }
 
       alert("Isusu group created successfully!");
-      setIsusuName("");
-      setFrequency("");
-      setMilestone("");
-      setIsusuClass("");
+      router.push("/dashboard/manage-isusu"); // ✅ Redirect after success
+
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -75,9 +75,9 @@ const CreateIsusu = () => {
           </div>
 
           <div>
-            <label className="block font-semibold">Class of Isusu</label>
+            <label htmlFor="isusuClass" className="block font-semibold">Class of Isusu</label>
             <select
-              title="Class of Isusu"
+              id="isusuClass"
               className="w-full border p-2 rounded-md mt-1"
               value={isusuClass}
               onChange={(e) => setIsusuClass(e.target.value)}

@@ -117,6 +117,9 @@ importers:
       '@types/node-schedule':
         specifier: ^2.1.7
         version: 2.1.7
+      '@types/paystack__inline-js':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@types/pg':
         specifier: ^8.11.11
         version: 8.11.11
@@ -793,6 +796,9 @@ packages:
 
   '@types/node@22.10.1':
     resolution: {integrity: sha512-qKgsUwfHZV2WCWLAnVP1JqnpE6Im6h3Y0+fYgMTasNQ7V++CBX5OT1as0g0f+OyubbFqhf6XVNIsmN4IIhEgGQ==}
+
+  '@types/paystack__inline-js@1.0.1':
+    resolution: {integrity: sha512-uAXk9EJobC/0v5zetSULTU8+3lIE3Y0Q0KwpR0lF7KRf+tj4AcE87kr6b8tpRkrr6uo9qXKgyjma+bmGDhwxbQ==}
 
   '@types/pg@8.11.11':
     resolution: {integrity: sha512-kGT1qKM8wJQ5qlawUrEkXgvMSXoV213KfMGXcwfDwUIfUHXqXYXOfS1nE1LINRJVVVx5wCm70XnFlMHaIcQAfw==}
@@ -3569,6 +3575,8 @@ snapshots:
   '@types/node@22.10.1':
     dependencies:
       undici-types: 6.20.0
+
+  '@types/paystack__inline-js@1.0.1': {}
 
   '@types/pg@8.11.11':
     dependencies:

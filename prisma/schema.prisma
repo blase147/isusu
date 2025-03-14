@@ -21,6 +21,7 @@ model User {
   timelines            TransactionTimeline[] @relation("UserTimelines")
   posts                Post[]
   notifications        Notification[]        @relation("UserNotifications") // ✅ Added
+  isusuPurchases       IsusuPurchase[]       @relation("UserIsusuPurchases") // ✅ Corrected
 }
 
 model Wallet {
@@ -69,15 +70,15 @@ model TransactionTimeline {
 model Notification {
   id        String   @id @default(uuid())
   userId    String
-  isusuId   String?  // If related to a group
-  walletId  String?  // If related to a wallet
-  type      String   // "transaction", "post", "group_transaction"
+  isusuId   String? // If related to a group
+  walletId  String? // If related to a wallet
+  type      String // "transaction", "post", "group_transaction"
   message   String
   createdAt DateTime @default(now())
   isRead    Boolean  @default(false) // Ensure this line exists
 
-  user      User     @relation("UserNotifications", fields: [userId], references: [id])
-  isusu     Isusu?   @relation("IsusuNotifications", fields: [isusuId], references: [id])
+  user  User   @relation("UserNotifications", fields: [userId], references: [id])
+  isusu Isusu? @relation("IsusuNotifications", fields: [isusuId], references: [id])
 }
 
 model Isusu {
@@ -122,4 +123,15 @@ model Post {
 
   user  User  @relation(fields: [userId], references: [id])
   isusu Isusu @relation(fields: [isusuId], references: [id])
+}
+
+model IsusuPurchase {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation("UserIsusuPurchases", fields: [userId], references: [id], onDelete: Cascade)
+  tier      String
+  amount    Decimal
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
