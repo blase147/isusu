@@ -147,7 +147,7 @@ activeSchedules[isusuId] = schedule.scheduleJob(cronExpression, async () => {
       const transaction = await prisma.transaction.create({
         data: {
           senderId: member.userId,
-          isusuGroupId: isusuId,
+          isusuId: isusuId,
           amount: isusu.milestone,
           type: "WITHDRAWAL",
           status: "SUCCESS",
