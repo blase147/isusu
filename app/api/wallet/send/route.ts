@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const { recipientEmail, groupId, amount, isIsusuGroup = false } = requestBody;
     const isIsusu = Boolean(isIsusuGroup) || Boolean(groupId);
 
-    console.log("📌 isIsusuGroup:", isIsusu);
+    console.log("📌 isusuId:", isIsusu);
     console.log("📌 recipientEmail:", recipientEmail || "N/A");
     console.log("📌 groupId:", groupId || "N/A");
     console.log("📌 amount:", amount);
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
             status: "SUCCESS",
             senderId: sender.id,
             recipientId: undefined,
-            isusuGroupId: isusu.id,
+            isusuId: isusu.id,
             reference: transactionRef,
             description: `Donation to Isusu Group: ${isusu.isusuName}`,
           },

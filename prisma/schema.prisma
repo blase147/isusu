@@ -97,7 +97,7 @@ model IsusuMembers {
 
 model Post {
   id        String   @id @default(uuid())
-  title     String?   // ✅ Added title field
+  title     String? // ✅ Added title field
   content   String
   mediaUrl  String?
   isusuId   String
@@ -107,4 +107,3 @@ model Post {
   user  User  @relation(fields: [userId], references: [id])
   isusu Isusu @relation(fields: [isusuId], references: [id])
 }
-
