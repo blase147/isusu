@@ -19,7 +19,8 @@ model User {
   walletId             String?               @unique
   wallet               Wallet?               @relation("UserWallet", fields: [walletId], references: [id])
   timelines            TransactionTimeline[] @relation("UserTimelines")
-  posts                Post[] // ✅ Added to fix the error
+  posts                Post[]
+  notifications        Notification[]        @relation("UserNotifications") // ✅ Added
 }
 
 model Wallet {
@@ -65,6 +66,20 @@ model TransactionTimeline {
   isusu       Isusu?      @relation("IsusuTimelines", fields: [isusuId], references: [id])
 }
 
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  isusuId   String?  // If related to a group
+  walletId  String?  // If related to a wallet
+  type      String   // "transaction", "post", "group_transaction"
+  message   String
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false) // Ensure this line exists
+
+  user      User     @relation("UserNotifications", fields: [userId], references: [id])
+  isusu     Isusu?   @relation("IsusuNotifications", fields: [isusuId], references: [id])
+}
+
 model Isusu {
   id                 String                @id @default(uuid())
   isusuName          String
@@ -84,6 +99,7 @@ model Isusu {
   contributionAmount Float?
   startDate          DateTime?
   posts              Post[]
+  notifications      Notification[]        @relation("IsusuNotifications") // ✅ Added
 }
 
 model IsusuMembers {
@@ -97,7 +113,7 @@ model IsusuMembers {
 
 model Post {
   id        String   @id @default(uuid())
-  title     String? // ✅ Added title field
+  title     String?
   content   String
   mediaUrl  String?
   isusuId   String

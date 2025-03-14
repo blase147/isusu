@@ -1,53 +1,62 @@
+"use client";
+
 import { useEffect, useState } from "react";
 
 interface Notification {
   id: string;
-  message: string;
+  userId: string;
+  isusuId?: string;
   type: string;
-  timestamp: string;
+  message: string;
+  createdAt: string;
 }
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch("/api/notifications") // ✅ Correct API route
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Network error: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("API Response:", data); // Debugging
-        setNotifications(data.notifications);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Fetch Error:", error);
-        setError(error.message);
-        setLoading(false);
-      });
-  }, []);
+  const userId = "some-user-id"; // 🔹 Replace with actual user ID (from auth state)
 
-  if (loading) return <p>Loading notifications...</p>;
-  if (error) return <p>Error: {error}</p>;
+  useEffect(() => {
+    if (!userId) return; // Ensure userId exists before fetching
+
+    const fetchNotifications = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/notifications?userId=${userId}`);
+        if (!res.ok) throw new Error("Failed to fetch notifications");
+        const data = await res.json();
+        setNotifications(data);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
+  }, [userId]);
 
   return (
-    <div className="p-4 bg-white rounded shadow">
-      <h2 className="text-xl font-bold mb-2">Notifications</h2>
+    <div className="max-w-lg mx-auto p-4 bg-white shadow-lg rounded-lg">
+      <h2 className="text-xl font-bold mb-4">🔔 Notifications</h2>
+
+      {error && <p className="text-red-500">{error}</p>}
+      {loading && <p>Loading...</p>}
+
       {notifications.length === 0 ? (
-        <p>No new notifications.</p>
+        <p>No notifications yet.</p>
       ) : (
-        <ul>
-          {notifications.map((notification) => (
-            <li key={notification.id} className="border-b py-2">
-              <p className="font-medium">{notification.message}</p>
-              <small className="text-gray-500">
-                {new Date(notification.timestamp).toLocaleString()}
-              </small>
+        <ul className="space-y-2">
+          {notifications.map((notif) => (
+            <li key={notif.id} className="p-2 border rounded bg-gray-100">
+              <span className="text-sm">{notif.message}</span>
+              <span className="text-xs text-gray-500 ml-2">
+                ({new Date(notif.createdAt).toLocaleTimeString()})
+              </span>
             </li>
           ))}
         </ul>

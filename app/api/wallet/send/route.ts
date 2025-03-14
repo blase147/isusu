@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const { recipientEmail, groupId, amount, isIsusuGroup = false } = requestBody;
     const isIsusu = Boolean(isIsusuGroup) || Boolean(groupId);
 
-    console.log("📌 isusuId:", isIsusu);
+    console.log("📌 isIsusu:", isIsusu);
     console.log("📌 recipientEmail:", recipientEmail || "N/A");
     console.log("📌 groupId:", groupId || "N/A");
     console.log("📌 amount:", amount);
@@ -43,6 +43,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: "Recipient email is required for individual transfers" }, { status: 400 });
     }
 
+    const transactionRef = `TX-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
     if (isIsusu) {
       if (!groupId || typeof groupId !== "string") {
         return NextResponse.json({ success: false, message: "Invalid group ID" }, { status: 400 });
@@ -61,8 +63,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
       }
 
-      const transactionRef = `TX-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
       await prisma.$transaction([
         prisma.wallet.update({ where: { id: sender.wallet.id }, data: { balance: { decrement: amount } } }),
         prisma.wallet.update({ where: { id: isusu.wallet.id }, data: { balance: { increment: amount } } }),
@@ -72,10 +72,16 @@ export async function POST(req: Request) {
             type: "TRANSFER",
             status: "SUCCESS",
             senderId: sender.id,
-            recipientId: undefined,
             isusuId: isusu.id,
             reference: transactionRef,
             description: `Donation to Isusu Group: ${isusu.isusuName}`,
+          },
+        }),
+        prisma.notification.create({
+          data: {
+            userId: sender.id,
+            type: "TRANSFER",
+            message: `You sent ₦${amount} to the Isusu group: ${isusu.isusuName}.`,
           },
         }),
       ]);
@@ -105,8 +111,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
     }
 
-    const transactionRef = `TX-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
     await prisma.$transaction([
       prisma.wallet.update({ where: { id: sender.wallet.id }, data: { balance: { decrement: amount } } }),
       prisma.wallet.update({ where: { id: recipient.wallet!.id }, data: { balance: { increment: amount } } }),
@@ -120,6 +124,20 @@ export async function POST(req: Request) {
           reference: transactionRef,
           description: `Money transfer to ${recipient.email}`,
         },
+      }),
+      prisma.notification.createMany({
+        data: [
+          {
+            userId: sender.id,
+            type: "TRANSFER",
+            message: `You sent ₦${amount} to ${recipient.email}.`,
+          },
+          {
+            userId: recipient.id,
+            type: "TRANSFER",
+            message: `You received ₦${amount} from ${sender.email}.`,
+          },
+        ],
       }),
     ]);
 

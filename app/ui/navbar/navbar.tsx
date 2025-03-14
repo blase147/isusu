@@ -7,6 +7,7 @@ import Notifications from "../notifications/notifications";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
@@ -31,8 +32,27 @@ const Navbar = () => {
         console.error("Error fetching user:", error);
       }
     };
-
     fetchUser();
+  }, []);
+
+  // Fetch notification count
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch("/api/notifications");
+        if (!response.ok) {
+          throw new Error("Failed to fetch notifications");
+        }
+        const data = await response.json();
+        setNotificationCount(data.length);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000); // Refresh every 10 seconds
+    return () => clearInterval(interval);
   }, []);
 
   // Close dropdowns when clicking outside
@@ -55,10 +75,8 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-md px-6 py-4 fixed top-0 w-full z-50 flex justify-between items-center">
-      {/* Left Section: Brand/Logo */}
       <div className="text-2xl font-bold text-gray-800">Dashboard</div>
 
-      {/* Right Section: Icons & User Menu */}
       <div className="flex items-center gap-4">
         {/* Notification Bell */}
         <div className="relative" ref={notifRef}>
@@ -67,12 +85,13 @@ const Navbar = () => {
             className="relative text-gray-600 hover:text-gray-900 focus:outline-none"
           >
             <BellIcon className="h-6 w-6" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
-              3
-            </span>
+            {notificationCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
+                {notificationCount}
+              </span>
+            )}
           </button>
 
-          {/* Dropdown Notifications */}
           {isNotifOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white shadow-md rounded-md p-2 border">
               <Notifications />
@@ -90,13 +109,12 @@ const Navbar = () => {
             <UserCircleIcon className="h-8 w-8" />
           </button>
 
-          {/* Dropdown Menu */}
           {isOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 border">
               <div className="px-4 py-2 text-gray-700 font-semibold border-b">
                 {user ? user.name : "Loading..."}
               </div>
-              <div className="px-4 py-2 text-gray-700 font-semibold border-b">
+              <div className="px-4 py-2 text-gray-700 text-sm font-semibold border-b">
                 {user ? user.email : "Loading..."}
               </div>
               <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">

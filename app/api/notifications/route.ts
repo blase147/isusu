@@ -1,20 +1,33 @@
 import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import { auth } from "@/auth"; // Import authentication function
 
-// Dummy notifications data (Replace with database query)
-const notifications = [
-  { id: "1", message: "New message from John Doe", type: "message", timestamp: "2025-03-11T10:30:00Z" },
-  { id: "2", message: "Your payment was successful!", type: "payment", timestamp: "2025-03-10T08:15:00Z" },
-  { id: "3", message: "System update scheduled for tomorrow", type: "system", timestamp: "2025-03-09T12:00:00Z" },
-];
+const prisma = new PrismaClient();
 
-// GET request handler for fetching notifications
+// 📌 GET /api/notifications - Fetch notifications for the authenticated user
 export async function GET() {
   try {
-    return NextResponse.json({ notifications }, { status: 200 });
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch notifications" },
-      { status: 500 }
-    );
+    // Authenticate user
+    const session = await auth();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id; // Get user ID from the authenticated session
+    console.log("Fetching notifications for authenticated userId:", userId);
+
+    const notifications = await prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      include: { user: true, isusu: true },
+    });
+
+    console.log("Fetched notifications:", notifications); // Debugging log
+
+    return NextResponse.json(notifications);
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
   }
 }

@@ -27,22 +27,43 @@ export default function Posts({ isusuId }: PostsProps) {
   useEffect(() => {
     if (!isusuId) return;
 
-    fetch(`/api/isusu/posts?isusuId=${isusuId}`)
-      .then((response) => response.json())
-      .then((data) => {
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch(`/api/isusu/posts?isusuId=${isusuId}`);
+
+        // ✅ Ensure response is OK before proceeding
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+
+        // ✅ Check if response body is empty before parsing
+        const text = await response.text();
+        if (!text) {
+          throw new Error("Empty response from server");
+        }
+
+        const data = JSON.parse(text);
+
+        // ✅ Ensure `data.posts` is an array before updating state
+        if (!Array.isArray(data.posts)) {
+          throw new Error("Invalid data format: posts is not an array");
+        }
+
         console.log("Fetched posts:", data);
-        setPosts(data.posts || []);
-        setLoading(false);
-      })
-      .catch((error) => {
+        setPosts(data.posts);
+      } catch (error) {
         console.error("Fetch Error:", error);
-        setError(error.message);
+        setError(error instanceof Error ? error.message : "Unknown error");
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchPosts();
   }, [isusuId]);
 
   if (loading) return <p>Loading posts...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (error) return <p className="text-red-500">Error: {error}</p>;
 
   return (
     <div className="p-4 bg-white rounded shadow">

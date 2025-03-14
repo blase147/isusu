@@ -3,10 +3,15 @@
 import { useState } from "react";
 
 const MakeDonation = ({ isusuId, onClose }: { isusuId: string; onClose: () => void }) => {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState<number | "">(""); // Allow empty string initially
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setAmount(value === "" ? "" : Number(value)); // Convert to number, but allow empty input
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +29,8 @@ const MakeDonation = ({ isusuId, onClose }: { isusuId: string; onClose: () => vo
       if (!response.ok) throw new Error(data.error || "Failed to process donation");
 
       setMessage("Donation successful!");
+      setAmount(""); // Reset amount
+      setDescription(""); // Reset description
     } catch (error: unknown) {
       if (error instanceof Error) {
         setMessage(error.message);
@@ -50,7 +57,7 @@ const MakeDonation = ({ isusuId, onClose }: { isusuId: string; onClose: () => vo
             type="number"
             placeholder="Donation Amount"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={handleAmountChange}
             className="border p-2 w-full rounded mb-2"
             required
           />

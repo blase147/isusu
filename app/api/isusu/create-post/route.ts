@@ -66,13 +66,29 @@ export async function POST(req: Request) {
     const newPost = await prisma.post.create({
       data: {
         content,
-        mediaUrl: mediaUrls.length > 0 ? mediaUrls.join(",") : null, // Store as a comma-separated string or use a relation
+        mediaUrl: mediaUrls.length > 0 ? mediaUrls.join(",") : null,
         isusuId,
         userId: user.id,
       },
     });
 
-    return NextResponse.json({ message: "Post created successfully", post: newPost }, { status: 201 });
+    // ✅ Fetch all group members (excluding the sender)
+    const groupMembers = await prisma.isusuMembers.findMany({
+      where: { isusuId, NOT: { userId: user.id } },
+      select: { userId: true },
+    });
+
+    // ✅ Create notifications for all members
+    const notifications = groupMembers.map((member) => ({
+      userId: member.userId,
+      isusuId,
+      type: "new_post",
+      message: `New post in your Isusu group`,
+    }));
+
+    await prisma.notification.createMany({ data: notifications });
+
+    return NextResponse.json({ message: "Post created & notifications sent", post: newPost }, { status: 201 });
   } catch (error) {
     console.error("⛔ Error creating post:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

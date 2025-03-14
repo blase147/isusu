@@ -48,8 +48,12 @@ const JoinIsusuContent = () => {
         return;
       }
 
-      // ✅ Redirect on success
-      router.push("/dashboard/isusu/join");
+      // ✅ Redirect to the joined Isusu group's page
+      if (data.groupId) {
+        router.push(`/dashboard/isusu/${data.groupId}`);
+      } else {
+        setError("Something went wrong. Group ID missing.");
+      }
     } catch (err) {
       console.error("Join error:", err);
       setError("Something went wrong. Please try again.");
@@ -75,9 +79,8 @@ const JoinIsusuContent = () => {
         {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
         <button
           onClick={handleJoin}
-          className={`w-full text-white px-4 py-2 rounded-lg mt-4 ${
-            loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-          }`}
+          className={`w-full text-white px-4 py-2 rounded-lg mt-4 ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+            }`}
           disabled={loading}
         >
           {loading ? "Joining..." : "Join Now"}
