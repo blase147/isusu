@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { Button } from "./../button";
+import { Button } from "../button";
 
 const CreatePost = () => {
   const { id } = useParams();

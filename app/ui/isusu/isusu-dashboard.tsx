@@ -2,12 +2,12 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button } from "./../button";
+import { Button } from "../button";
 import Link from "next/link";
 import Leaderboard from "./leaderboard";
 import TransactionTimeline from "./transaction-timeline";
 import MembersList from "./members-list";
-import Posts from "./posts";
+import Posts from "./posts"; // Import the posts component
 import DuesHistory from "./dues-history"; // Import the modal
 import CreatePost from "./create-post";
 import MakeDonation from "./make-donation"; // Import the donation modal
@@ -140,7 +140,7 @@ const IsusuDashboard = () => {
             {/* Left Section - Create Post & Posts */}
             <div className="md:col-span-1 space-y-6">
               <CreatePost /> {/* Ensure Create Post appears first */}
-              <Posts />
+              <Posts isusuId={id} />
             </div>
 
             {/* Right Section - Transaction Timeline */}

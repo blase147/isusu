@@ -8,80 +8,82 @@ datasource db {
 }
 
 model User {
-  id                   String         @id @default(uuid())
-  email                String         @unique
+  id                   String                @id @default(uuid())
+  email                String                @unique
   name                 String?
   password             String
-  createdIsusus        Isusu[]        @relation("CreatedIsusus")
+  createdIsusus        Isusu[]               @relation("CreatedIsusus")
   isusuMemberships     IsusuMembers[]
-  receivedTransactions Transaction[]  @relation("ReceivedTransactions")
-  sentTransactions     Transaction[]  @relation("SentTransactions")
-  walletId             String?        @unique  // ✅ Keep walletId for direct access
-  wallet               Wallet?        @relation("UserWallet", fields: [walletId], references: [id]) // ✅ Fields only here
-  timelines            TransactionTimeline[]  @relation("UserTimelines")
+  receivedTransactions Transaction[]         @relation("ReceivedTransactions")
+  sentTransactions     Transaction[]         @relation("SentTransactions")
+  walletId             String?               @unique
+  wallet               Wallet?               @relation("UserWallet", fields: [walletId], references: [id])
+  timelines            TransactionTimeline[] @relation("UserTimelines")
+  posts                Post[] // ✅ Added to fix the error
 }
 
 model Wallet {
   id        String   @id @default(uuid())
   balance   Float    @default(0.00)
   createdAt DateTime @default(now())
-  user      User?    @relation("UserWallet")  // ✅ No fields/references here
-  isusu     Isusu?   @relation("IsusuWallet") // ✅ No fields/references here
+  user      User?    @relation("UserWallet")
+  isusu     Isusu?   @relation("IsusuWallet")
 }
 
 model Transaction {
   id          String   @id @default(uuid())
   amount      Float
-  type        String   // e.g., TRANSFER, DEPOSIT, WITHDRAWAL
-  status      String   // e.g., PENDING, SUCCESS, FAILED
+  type        String
+  status      String
   createdAt   DateTime @default(now())
-  recipientId String?  // Nullable for group transactions
+  recipientId String?
   senderId    String
   reference   String   @unique
-  description String?  // Optional transaction description
-  isIsusu     Boolean  @default(false)  // Flag for Isusu transactions
-  isusuGroupId String? // Nullable if not an Isusu transaction
+  description String?
+  isIsusu     Boolean  @default(false)
+  isusuId     String?
 
-  recipient   User?    @relation("ReceivedTransactions", fields: [recipientId], references: [id])
-  sender      User     @relation("SentTransactions", fields: [senderId], references: [id])
-  isusuGroup  Isusu?   @relation("IsusuTransactions", fields: [isusuGroupId], references: [id]) // ✅ Fixed relation name
+  recipient User?  @relation("ReceivedTransactions", fields: [recipientId], references: [id])
+  sender    User   @relation("SentTransactions", fields: [senderId], references: [id])
+  isusu     Isusu? @relation("IsusuTransactions", fields: [isusuId], references: [id])
 
   transactionTimeline TransactionTimeline[]
 }
 
 model TransactionTimeline {
-  id             String   @id @default(uuid())
-  transactionId  String
-  userId         String
-  isusuGroupId   String?
-  amount         Float
+  id              String  @id @default(uuid())
+  transactionId   String
+  userId          String
+  isusuId         String?
+  amount          Float
   transactionType String
-  status        String
-  description   String?
+  status          String
+  description     String?
 
-  transaction  Transaction @relation(fields: [transactionId], references: [id])
-  user         User        @relation("UserTimelines", fields: [userId], references: [id])
-  isusuGroup   Isusu?      @relation("IsusuTimelines", fields: [isusuGroupId], references: [id]) // ✅ Fixed relation name
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  user        User        @relation("UserTimelines", fields: [userId], references: [id])
+  isusu       Isusu?      @relation("IsusuTimelines", fields: [isusuId], references: [id])
 }
 
 model Isusu {
-  id            String                 @id @default(uuid())
-  isusuName     String
-  frequency     String
-  milestone     Float
-  isusuClass    String
-  createdAt     DateTime               @default(now())
-  invite_code   String?                 @unique @default(uuid())
-  createdById   String
-  isActive      Boolean                @default(false) // ✅ Track activation state
-  createdBy     User                   @relation("CreatedIsusus", fields: [createdById], references: [id])
-  members       IsusuMembers[]
-  walletId      String?                 @unique
-  wallet        Wallet?                 @relation("IsusuWallet", fields: [walletId], references: [id])
-  transactions  Transaction[]           @relation("IsusuTransactions")
-  timelines     TransactionTimeline[]   @relation("IsusuTimelines")
+  id                 String                @id @default(uuid())
+  isusuName          String
+  frequency          String
+  milestone          Float
+  isusuClass         String
+  createdAt          DateTime              @default(now())
+  invite_code        String?               @unique @default(uuid())
+  createdById        String
+  isActive           Boolean               @default(false)
+  createdBy          User                  @relation("CreatedIsusus", fields: [createdById], references: [id])
+  members            IsusuMembers[]
+  walletId           String?               @unique
+  wallet             Wallet?               @relation("IsusuWallet", fields: [walletId], references: [id])
+  transactions       Transaction[]         @relation("IsusuTransactions")
+  timelines          TransactionTimeline[] @relation("IsusuTimelines")
   contributionAmount Float?
-  startDate  DateTime?  // Ensure this field exists
+  startDate          DateTime?
+  posts              Post[]
 }
 
 model IsusuMembers {
@@ -92,3 +94,17 @@ model IsusuMembers {
   isusu    Isusu    @relation(fields: [isusuId], references: [id])
   user     User     @relation(fields: [userId], references: [id])
 }
+
+model Post {
+  id        String   @id @default(uuid())
+  title     String?   // ✅ Added title field
+  content   String
+  mediaUrl  String?
+  isusuId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  isusu Isusu @relation(fields: [isusuId], references: [id])
+}
+
