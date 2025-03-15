@@ -30,6 +30,7 @@ export async function POST(req: Request) {
 
     // ✅ Parse FormData
     const formData = await req.formData();
+    const title = formData.get("title") as string;
     const isusuId = formData.get("isusuId") as string;
     const content = formData.get("content") as string;
     const mediaFiles = formData.getAll("files") as File[];
@@ -66,6 +67,7 @@ export async function POST(req: Request) {
     const newPost = await prisma.post.create({
       data: {
         content,
+        title,
         mediaUrl: mediaUrls.length > 0 ? mediaUrls.join(",") : null,
         isusuId,
         userId: user.id,
@@ -79,7 +81,25 @@ export async function POST(req: Request) {
     });
 
     // ✅ Create notifications for all members
-    const notifications = groupMembers.map((member) => ({
+    interface Notification {
+      userId: string;
+      isusuId: string;
+      type: string;
+      message: string;
+    }
+
+    interface GroupMember {
+      userId: string;
+    }
+
+    interface Notification {
+      userId: string;
+      isusuId: string;
+      type: string;
+      message: string;
+    }
+
+    const notifications: Notification[] = groupMembers.map((member: GroupMember): Notification => ({
       userId: member.userId,
       isusuId,
       type: "new_post",
