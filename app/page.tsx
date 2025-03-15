@@ -1,23 +1,55 @@
-// import '@/app/ui/global.css';
-// import { inter } from '@/app/ui/fonts';
-import Link from 'next/link';
+"use client"
+
+import { useState } from "react";
+import Link from "next/link";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline"; // ✅ CORRECT
 
 export default function Page() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div className="bg-gray-100 min-h-screen">
-      {/* Header Section */}
       <header className="bg-blue-600 text-white py-6 px-4">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">Isusu App</h1>
-          <nav>
-            <ul className="flex space-x-4">
-              <li><a href="#features" className="hover:underline">Features</a></li>
-              <li><a href="#how-it-works" className="hover:underline">How It Works</a></li>
-              <li><a href="#contact" className="hover:underline">Contact</a></li>
+
+          {/* Hamburger Menu Button (Visible on Mobile) */}
+          <button
+            className="block md:hidden"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? (
+              <XMarkIcon className="w-8 h-8 text-white" />
+            ) : (
+              <Bars3Icon className="w-8 h-8 text-white" />
+            )}
+          </button>
+
+          {/* Navigation Links (Hidden on Mobile, Visible on Desktop) */}
+          <nav
+            className={`absolute top-16 left-0 w-full bg-blue-600 md:static md:block md:w-auto ${menuOpen ? "block" : "hidden"
+              }`}
+          >
+            <ul className="flex flex-col md:flex-row md:space-x-4 p-4 md:p-0">
+              <li>
+                <a href="#features" className="block py-2 px-4 hover:underline">
+                  Features
+                </a>
+              </li>
+              <li>
+                <a href="#how-it-works" className="block py-2 px-4 hover:underline">
+                  How It Works
+                </a>
+              </li>
+              <li>
+                <a href="#contact" className="block py-2 px-4 hover:underline">
+                  Contact
+                </a>
+              </li>
               <li>
                 <Link
                   href="/login"
-                  className=" text-blue-600 px-4 py-2 rounded-lg hover:bg-gray-100"
+                  className="block py-2 px-4 bg-white text-blue-600 rounded-lg hover:bg-gray-100"
                 >
                   Sign In
                 </Link>
