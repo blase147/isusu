@@ -130,6 +130,11 @@ const handleSuccess = async (response: { reference: string }) => {
         });
 
         if (isusuPurchaseResponse.ok) {
+          if (userId) {
+            await updateWallet(userId, Number(amount));
+          } else {
+            console.error("User ID is undefined");
+          }
           alert("Hurray!! Your Isusu Purchase was successful!");
           router.push("/dashboard/manage-isusu");
         } else {
@@ -150,6 +155,18 @@ const handleSuccess = async (response: { reference: string }) => {
     }
   }
 };
+
+  const updateWallet = async (userId: string, amount: number) => {
+    try {
+      await fetch("/api/isusu/IGR", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, amount }),
+      });
+    } catch (error) {
+      console.error("Error updating wallet:", error);
+    }
+  };
 
 const createIsusuGroup = async () => {
   try {

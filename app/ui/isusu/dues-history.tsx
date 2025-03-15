@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCallback } from "react";
 
 const DuesHistory = ({ isusuId, onClose }: { isusuId: string; onClose: () => void }) => {
   const [dues, setDues] = useState<{ date: string; amount: number; status: string }[] | null>(null);
@@ -20,7 +21,7 @@ const DuesHistory = ({ isusuId, onClose }: { isusuId: string; onClose: () => voi
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const fetchDuesHistory = async () => {
+  const fetchDuesHistory = useCallback(async () => {
     try {
       setLoading(true);
       let url = "/api/isusu/dues-history";
@@ -42,11 +43,11 @@ const DuesHistory = ({ isusuId, onClose }: { isusuId: string; onClose: () => voi
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate]);
 
   useEffect(() => {
     fetchDuesHistory();
-  }, [isusuId]);
+  }, [isusuId, fetchDuesHistory]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -129,3 +130,4 @@ const DuesHistory = ({ isusuId, onClose }: { isusuId: string; onClose: () => voi
 };
 
 export default DuesHistory;
+

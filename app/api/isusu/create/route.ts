@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { auth } from "@/auth";
 
 const prisma = new PrismaClient();
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     }
 
     // Create Isusu and associated wallet in a transaction
-    const newIsusu = await prisma.$transaction(async (tx) => {
+    const newIsusu = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const isusu = await tx.isusu.create({
         data: {
           isusuName,
@@ -71,7 +71,6 @@ export async function POST(req: Request) {
 
       return { ...isusu, wallet };
     });
-
 
     return NextResponse.json(newIsusu, { status: 201 });
   } catch (error) {
