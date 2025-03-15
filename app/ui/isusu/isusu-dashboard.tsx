@@ -77,7 +77,7 @@ const IsusuDashboard = () => {
   }, [id]);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 text-black-900">
       {/* Top Header with Isusu Name and Wallet Balance */}
       <div className="space-x-4 flex flex-row items-center justify-between">
         <h2 className="text-3xl font-bold text-gray-800">📊 {isusuName}</h2>

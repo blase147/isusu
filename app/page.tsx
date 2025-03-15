@@ -17,7 +17,7 @@ export default function Page() {
               <li>
                 <Link
                   href="/login"
-                  className="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-gray-100"
+                  className=" text-blue-600 px-4 py-2 rounded-lg hover:bg-gray-100"
                 >
                   Sign In
                 </Link>
@@ -34,7 +34,7 @@ export default function Page() {
             Empowering Communities Through Cooperation
           </h2>
           <p className="text-gray-700 text-lg mb-6">
-            Isusu App is your digital solution for managing and growing your cooperative 
+            Isusu App is your digital solution for managing and growing your cooperative
             associations or clubs. Together, we can achieve more!
           </p>
           <Link

@@ -210,13 +210,13 @@ const ManageIsusu = () => {
                     )}
                   </div>
 
-                  <Link href={`/dashboard/isusu-dashboard/${group.id}`} className="flex items-center space-x-2">
+                  <Link href={`/dashboard/isusu-dashboard/${group.id}`} className="flex items-center space-x-2 text-black-900">
                     <span>Members: {Array.isArray(group.members) ? group.members.length : group.members ?? 0}</span>
-                    <EyeIcon className="w-5 text-gray-600" />
+                    <EyeIcon className="w-5 text-gray-900" />
                   </Link>
                 </div>
 
-                <p className="text-lg font-semibold text-black mb-4 text-center">{group.isusuClass}</p>
+                <p className="text-lg font-semibold  mb-4 text-center text-yellow-900">{group.isusuClass}</p>
 
                 <div className="flex justify-between">
                   <p className="text-gray-700"><strong>Frequency:</strong> {group.frequency}</p>

@@ -5,7 +5,7 @@ import { SessionProvider } from 'next-auth/react';
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
 <SessionProvider>
-    <div className="flex h-screen flex-col md:flex-row md:overflow-hidden">
+      <div className="flex h-screen bg-gray flex-col md:flex-row md:overflow-hidden">
       <div className="w-full flex-none md:w-64">
         <SideNav />
       </div>
