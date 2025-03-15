@@ -1,7 +1,9 @@
-import CreateIsusu from '@/app/ui/isusu/create-isusu';
+'use client';
 
-export default async function Page() {
-    return (
-        <CreateIsusu />
-    );
+import dynamic from "next/dynamic";
+
+const CreateIsusu = dynamic(() => import("./../../ui/isusu/create-isusu"), { ssr: false });
+
+export default function Page() {
+    return <CreateIsusu />;
 }

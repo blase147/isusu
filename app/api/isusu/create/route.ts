@@ -72,6 +72,7 @@ export async function POST(req: Request) {
       return { ...isusu, wallet };
     });
 
+
     return NextResponse.json(newIsusu, { status: 201 });
   } catch (error) {
     console.error("Error creating Isusu group:", error);

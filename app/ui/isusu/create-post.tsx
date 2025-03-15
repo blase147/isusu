@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "../button";
+import Image from "next/image";
 
 const CreatePost = () => {
   const { id } = useParams();
@@ -106,7 +107,7 @@ const CreatePost = () => {
         {previewUrls.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {previewUrls.map((url, index) => (
-              <img key={index} src={url} alt="Preview" className="w-20 h-20 object-cover rounded" />
+              <Image key={index} src={url} alt="Preview" width={80} height={80} className="object-cover rounded" />
             ))}
           </div>
         )}

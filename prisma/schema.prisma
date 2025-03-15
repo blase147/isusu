@@ -13,15 +13,15 @@ model User {
   name                 String?
   password             String
   createdIsusus        Isusu[]               @relation("CreatedIsusus")
-  isusuMemberships     IsusuMembers[]
+  isusuMemberships     IsusuMembers[]        // This relation was added correctly earlier
   receivedTransactions Transaction[]         @relation("ReceivedTransactions")
   sentTransactions     Transaction[]         @relation("SentTransactions")
   walletId             String?               @unique
   wallet               Wallet?               @relation("UserWallet", fields: [walletId], references: [id])
   timelines            TransactionTimeline[] @relation("UserTimelines")
-  posts                Post[]
-  notifications        Notification[]        @relation("UserNotifications") // ✅ Added
-  isusuPurchases       IsusuPurchase[]       @relation("UserIsusuPurchases") // ✅ Corrected
+  posts                Post[]                // Correctly added posts earlier
+  notifications        Notification[]        @relation("UserNotifications")
+  isusuPurchases       IsusuPurchase[]       @relation("UserIsusuPurchases")
 }
 
 model Wallet {
@@ -92,16 +92,35 @@ model Isusu {
   createdById        String
   isActive           Boolean               @default(false)
   createdBy          User                  @relation("CreatedIsusus", fields: [createdById], references: [id])
-  members            IsusuMembers[]
+  members            IsusuMembers[]        // Existing relation
   walletId           String?               @unique
   wallet             Wallet?               @relation("IsusuWallet", fields: [walletId], references: [id])
   transactions       Transaction[]         @relation("IsusuTransactions")
   timelines          TransactionTimeline[] @relation("IsusuTimelines")
   contributionAmount Float?
   startDate          DateTime?
-  posts              Post[]
-  notifications      Notification[]        @relation("IsusuNotifications") // ✅ Added
+  posts              Post[]                // Existing relation
+  notifications      Notification[]        @relation("IsusuNotifications") // Existing relation
+  purchases          IsusuPurchase[]       // Add this field to complete the relation with IsusuPurchase
+  price              Float?
 }
+
+model IsusuPurchase {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation("UserIsusuPurchases", fields: [userId], references: [id], onDelete: Cascade)
+  tier      String
+  amount    Decimal
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isusuId   String   // Make this non-nullable
+  isusu     Isusu    @relation(fields: [isusuId], references: [id]) // Make the relation non-nullable
+   paystackReference String
+}
+
+
+
 
 model IsusuMembers {
   id       String   @id @default(uuid())
@@ -123,15 +142,4 @@ model Post {
 
   user  User  @relation(fields: [userId], references: [id])
   isusu Isusu @relation(fields: [isusuId], references: [id])
-}
-
-model IsusuPurchase {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  user      User     @relation("UserIsusuPurchases", fields: [userId], references: [id], onDelete: Cascade)
-  tier      String
-  amount    Decimal
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

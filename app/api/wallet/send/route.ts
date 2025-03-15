@@ -18,13 +18,14 @@ export async function POST(req: Request) {
 
     console.log("📩 Parsed Request Data:", requestBody);
 
-    const { recipientEmail, groupId, amount, isIsusuGroup = false } = requestBody;
+    const { recipientEmail, groupId, amount, tier, isIsusuGroup = false } = requestBody;
     const isIsusu = Boolean(isIsusuGroup) || Boolean(groupId);
 
     console.log("📌 isIsusu:", isIsusu);
     console.log("📌 recipientEmail:", recipientEmail || "N/A");
     console.log("📌 groupId:", groupId || "N/A");
     console.log("📌 amount:", amount);
+    console.log("📌 tier:", tier);
 
     if (!amount || typeof amount !== "number" || amount <= 0) {
       return NextResponse.json({ success: false, message: "Invalid transaction amount" }, { status: 400 });
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
       const isusu = await prisma.isusu.findUnique({
         where: { id: groupId },
         include: { wallet: true },
-      });
+      })
 
       if (!isusu || !isusu.wallet) {
         return NextResponse.json({ success: false, message: "Isusu group not found or has no wallet" }, { status: 404 });
@@ -63,38 +64,39 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
       }
 
-      await prisma.$transaction([
-        prisma.wallet.update({ where: { id: sender.wallet.id }, data: { balance: { decrement: amount } } }),
-        prisma.wallet.update({ where: { id: isusu.wallet.id }, data: { balance: { increment: amount } } }),
-        prisma.transaction.create({
-          data: {
-            amount,
-            type: "TRANSFER",
-            status: "SUCCESS",
-            senderId: sender.id,
-            isusuId: isusu.id,
-            reference: transactionRef,
-            description: `Donation to Isusu Group: ${isusu.isusuName}`,
-          },
-        }),
-        prisma.notification.create({
-          data: {
-            userId: sender.id,
-            type: "TRANSFER",
-            message: `You sent ₦${amount} to the Isusu group: ${isusu.isusuName}.`,
-          },
-        }),
-      ]);
-      // ✅ ADD THIS TO LINK ISUSU PURCHASES
-      prisma.isusuPurchase.create({
-        data: {
-          userId: sender.id,
-          isusuId: isusu.id,
-          amount: amount,
-          reference: transactionRef,
-          status: "COMPLETED", // You can use "PENDING" if you want to verify before completion
-        },
-      });
+      try {
+        await prisma.$transaction([
+          prisma.wallet.update({
+            where: { id: sender.wallet.id },
+            data: { balance: { decrement: amount } },
+          }),
+          prisma.wallet.update({
+            where: { id: isusu.wallet.id },
+            data: { balance: { increment: amount } },
+          }),
+          prisma.transaction.create({
+            data: {
+              amount,
+              type: "TRANSFER",
+              status: "SUCCESS",
+              senderId: sender.id,
+              isusuId: isusu.id,
+              reference: transactionRef,
+              description: `Donation to Isusu Group: ${isusu.isusuName}`,
+            },
+          }),
+          prisma.notification.create({
+            data: {
+              userId: sender.id,
+              type: "TRANSFER",
+              message: `You sent ₦${amount} to the Isusu group: ${isusu.isusuName}.`,
+            },
+          }),
+        ]);
+      } catch (error) {
+        console.error("🚨 Transaction Failed:", error);
+      }
+
 
       return NextResponse.json({ success: true, message: "Funds transferred to Isusu group wallet" }, { status: 200 });
     }

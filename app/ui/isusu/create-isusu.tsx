@@ -1,18 +1,60 @@
 "use client";
 
 import { BackwardIcon } from "@heroicons/react/24/outline";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // ✅ Import useRouter
+import { useRouter, useSearchParams } from "next/navigation";
+import { PaystackButton } from "react-paystack";
+import { useSession } from "next-auth/react";
 
 const CreateIsusu = () => {
-  const router = useRouter(); // ✅ Initialize router
+const { data: session } = useSession();
+const userId = session?.user?.id;
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isusuName, setIsusuName] = useState("");
   const [frequency, setFrequency] = useState("");
-  const [milestone, setMilestone] = useState("");
+  const [milestone, setMilestone] = useState<number | "">("");
   const [isusuClass, setIsusuClass] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [amount, setAmount] = useState<string>(""); // Amount for Paystack
+  const [tier, setTier] = useState<string>(""); // Name for isusuPurchase
+  const [publicKey, setPublicKey] = useState<string>("");
+
+  const userEmail = "user@example.com"; // Replace with dynamic email if available
+
+
+  useEffect(() => {
+    const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+    if (paystackPublicKey) {
+      setPublicKey(paystackPublicKey);
+    } else {
+      setError("Paystack public key not configured.");
+    }
+
+    const queryName = searchParams.get("tierName");
+    const queryPrice = searchParams.get("tierId");
+
+       if (queryPrice) {
+         const validTierId = Number(queryPrice);
+      if (!isNaN(validTierId) && validTierId > 0) {
+        setAmount(queryPrice); // Pre-fill the amount input if it exists in the URL
+      } else {
+        console.error("Invalid tierId value in URL");
+      }
+         console.log("tierId from URL:", queryName);
+         console.log("tierId from URL:", queryPrice);
+         console.log("Paystack Public Key:", paystackPublicKey);
+
+    }
+
+    if (queryName) {
+      setTier(queryName);
+    } else {
+      console.error("Invalid price value in URL");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -20,33 +62,126 @@ const CreateIsusu = () => {
     setError("");
 
     try {
-      const response = await fetch("/api/isusu/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          isusuName,
-          frequency,
-          milestone: Number(milestone), // Convert to number
-          isusuClass,
-        }),
-      });
-
-      const text = await response.text();
-      const data = text ? JSON.parse(text) : null;
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to create Isusu group");
+      if (isAmountValid && isPublicKeyLoaded) {
+        alert("Proceed with the payment to create the Isusu group.");
+      } else {
+        setError("Please provide a valid amount.");
       }
-
-      alert("Isusu group created successfully!");
-      router.push("/dashboard/manage-isusu"); // ✅ Redirect after success
-
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
     }
   };
+
+const handleSuccess = async (response: { reference: string }) => {
+  console.log("Payment Success:", response);
+
+  if (!response.reference) {
+    alert("Transaction reference missing!");
+    return;
+  }
+
+  try {
+    // Step 1: Verify the payment using Paystack reference
+    const verifyResponse = await fetch("/api/paystack/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ reference: response.reference, amount: Number(amount) }),
+    });
+
+    const result = await verifyResponse.json();
+    console.log("Payment Verification Result:", result);
+
+    // if the payment was successful, add a function that routs to send money api route to put the money in the wallet
+
+    if (result.success) {
+      const createdIsusu = await createIsusuGroup(); // Call the function here
+
+      if (createdIsusu) {
+        const isusuId = createdIsusu.id; // Assuming the response includes the isusuId
+        const paystackReference = response.reference;
+        console.log("Created Isusu ID:", isusuId);
+        console.log("Sending isusuPurchase request:", {
+          isusuId,
+          userId,
+          tier,
+          amount: Number(amount),
+          status: "COMPLETED",
+          paystackReference: response.reference,
+        });
+
+        // Step 3: Update or create Isusu Purchase record
+        const isusuPurchaseResponse = await fetch("/api/isusu/isusu-purchase", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            isusuId,
+            userId: userId, // Replace with the actual user ID
+            tier: tier,
+            amount: Number(amount),
+            status: "COMPLETED",
+            paystackReference,
+          }),
+        });
+
+        if (isusuPurchaseResponse.ok) {
+          alert("Hurray!! Your Isusu Purchase was successful!");
+          router.push("/dashboard/manage-isusu");
+        } else {
+          alert("I am sorry your Isusu Purchase Failed.");
+        }
+      } else {
+        alert("Failed to create Isusu group.");
+      }
+    } else {
+      alert("Failed to create Isusu group.");
+    }
+  } catch (error) {
+    console.error("Error verifying payment:", error); // Log the error to the console for more information
+    if (error instanceof Error) {
+      alert("An error occurred while verifying payment: " + error.message); // Show the error message to the user
+    } else {
+      alert("An unknown error occurred while verifying payment.");
+    }
+  }
+};
+
+const createIsusuGroup = async () => {
+  try {
+    const response = await fetch("/api/isusu/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        isusuName,
+        frequency,
+        milestone: Number(milestone),
+        isusuClass,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create Isusu group.");
+    }
+
+    const data = await response.json();
+    return data; // Returns the created Isusu group data
+  } catch (error) {
+    console.error("Error creating Isusu group:", error);
+    alert("Error creating Isusu group. Please try again.");
+    return null;
+  }
+};
+
+
+  const isAmountValid = Number(amount) > 0;
+  const isPublicKeyLoaded = publicKey !== "";
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -121,18 +256,27 @@ const CreateIsusu = () => {
               className="w-full border p-2 rounded-md mt-1"
               placeholder="Enter target amount"
               value={milestone}
-              onChange={(e) => setMilestone(e.target.value)}
+              onChange={(e) => setMilestone(e.target.value ? Number(e.target.value) : "")}
               required
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white p-3 rounded-md font-semibold mt-4"
-            disabled={loading}
-          >
-            {loading ? "Creating..." : "Create Isusu"}
-          </button>
+          <input type="hidden" name="amount" value={amount} />
+
+          {isPublicKeyLoaded && isAmountValid ? (
+            <PaystackButton
+              text={loading ? "Creating..." : "Create Isusu"} disabled={!isAmountValid || !isPublicKeyLoaded}
+              className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 w-full"
+              publicKey={publicKey}
+              amount={Number(amount) * 100}
+              email={userEmail}
+              currency={"NGN"}
+              onSuccess={handleSuccess}
+              onClose={() => alert("Transaction was closed!")}
+            />
+          ) : (
+            <p className="text-red-500 text-sm text-center">Enter a valid amount to proceed.</p>
+          )}
         </form>
       </div>
     </div>
