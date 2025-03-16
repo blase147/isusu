@@ -23,7 +23,6 @@ export const tiers = [
             transactions: 'Withdrawals visible to only Admin',
         },
         permissions: {
-            withdrawals: 'Auto Withdrawals',
             admins: 1,
             loanAccess: true,
             investmentOpportunities: false,

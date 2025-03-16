@@ -7,144 +7,129 @@ import Link from "next/link";
 import Leaderboard from "./leaderboard";
 import TransactionTimeline from "./transaction-timeline";
 import MembersList from "./members-list";
-import Posts from "./posts"; // Import the posts component
-import DuesHistory from "./dues-history"; // Import the modal
+import Posts from "./posts";
+import DuesHistory from "./dues-history";
 import CreatePost from "./create-post";
-import MakeDonation from "./make-donation"; // Import the donation modal
+import MakeDonation from "./make-donation";
+import tiers from "../../lib/utils";
 
 const IsusuDashboard = () => {
-  const params = useParams();
-  const id = Array.isArray(params.id) ? params.id[0] : params.id ?? ""; // Ensuring id is always a string
+  const { id } = useParams();
+  const isusuId = Array.isArray(id) ? id[0] : id ?? "";
 
-  const [isusuName, setIsusuName] = useState<string>("");
+  const [isusuName, setIsusuName] = useState("");
+  const [isusuTier, setIsusuTier] = useState("");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [showDuesHistory, setShowDuesHistory] = useState(false); // Modal state
-  const [showMakeDonation, setShowMakeDonation] = useState(false); // Donation modal state
+  const [error, setError] = useState("");
+  const [showDuesHistory, setShowDuesHistory] = useState(false);
+  const [showMakeDonation, setShowMakeDonation] = useState(false);
 
   useEffect(() => {
-    if (!id) {
+    if (!isusuId) {
       setError("Isusu ID is missing");
       return;
     }
 
-    const fetchIsusuName = async () => {
+    const fetchData = async () => {
       try {
-        console.log("Fetching Isusu with ID:", id);
-        const response = await fetch(`/api/isusu/fetch?isusuId=${id}`);
+        const [isusuRes, walletRes] = await Promise.all([
+          fetch(`/api/isusu/fetch?isusuId=${isusuId}`),
+          fetch(`/api/wallet/group-balance?isusuId=${isusuId}`)
+        ]);
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch Isusu group");
-        }
+        if (!isusuRes.ok) throw new Error("Failed to fetch Isusu group");
+        if (!walletRes.ok) throw new Error("Failed to fetch wallet balance");
 
-        const data = await response.json();
-        console.log("API response data:", data);
+        const isusuData = await isusuRes.json();
+        const walletData = await walletRes.json();
 
-        const isusu =
-          data.created?.find((group: { id: string }) => group.id === id) ||
-          data.joined?.find((group: { id: string }) => group.id === id);
+        const isusu = isusuData.created?.find((group: { id: string }) => group.id === isusuId) ||
+          isusuData.joined?.find((group: { id: string }) => group.id === isusuId);
 
-        if (isusu) {
-          setIsusuName(isusu.isusuName);
+        if (!isusu) throw new Error("Isusu group not found");
+
+        setIsusuName(isusu.isusuName);
+        setIsusuTier(isusu.tier || "Unknown Tier");
+
+        setWalletBalance(walletData.balance || 0);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message || "An unknown error occurred");
         } else {
-          setError("Isusu group not found");
+          setError("An unknown error occurred");
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
       }
     };
 
-    const fetchWalletBalance = async () => {
-      try {
-        console.log("Fetching wallet balance for Isusu ID:", id);
-        const response = await fetch(`/api/wallet/group-balance?isusuId=${id}`);
+    fetchData();
+  }, [isusuId]);
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch wallet balance");
-        }
+  const formattedTier = `Tier ${isusuTier.replace(/\D/g, "")}`.trim();
+  const currentTier = tiers.find((tier) => tier.name === formattedTier);
 
-        const data = await response.json();
-        console.log("Wallet API response:", data);
+  if (!currentTier) {
+    console.warn("Warning: Tier not found for:", isusuTier);
+  }
+  const isAdmin = true; // Replace with actual admin check
 
-        setWalletBalance(data.balance || 0); // Default to 0 if balance is missing
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load wallet balance");
-      }
-    };
-
-    fetchIsusuName();
-    fetchWalletBalance();
-  }, [id]);
 
   return (
-    <div className="container mx-auto p-6 space-y-6 text-black-900">
-      {/* Top Header with Isusu Name and Wallet Balance */}
-      <div className="space-x-4 flex flex-row items-center justify-between">
+    <div className="container mx-auto p-4 space-y-4 text-black-900 mt-4">
+      <div className="flex flex-wrap justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-800">📊 {isusuName}</h2>
+        <h2 className="text-3xl font-bold text-gray-800">{isusuTier}</h2>
         <div className="bg-white p-4 rounded-lg shadow-md text-center">
-          <h2 className="text-lg font-semibold">Group Wallet</h2>
-          {walletBalance !== null ? (
-            <p className="text-xl font-bold">N{walletBalance.toLocaleString()}</p>
-          ) : (
-            <p className="text-gray-500">Loading...</p>
-          )}
+
+          {(currentTier?.visibility?.walletBalance === 'Visible to all members' ||
+            (currentTier?.visibility?.walletBalance === 'Visible to only Admin' && isAdmin)) && (
+              <Link href={`/isusu/${isusuId}/loan-request`}>
+                <h2 className="text-lg font-semibold">Group Wallet</h2>
+                <p className="text-xl font-bold">
+                  {walletBalance !== null ? `N${walletBalance.toLocaleString()}` : "Loading..."}
+                </p>
+              </Link>
+            )}
+
+
+
         </div>
         {error && <p className="text-red-500 font-semibold">{error}</p>}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-4 w-full bg-gray-100 p-4 rounded-lg flex-wrap">
-        <Button
-          className="bg-green-600 text-white px-4 py-2 rounded-lg"
-          onClick={() => setShowMakeDonation(true)}
-        >
+      <div className="flex flex-wrap gap-4 bg-gray-100 p-4 rounded-lg">
+        <Button className="bg-green-600 text-white px-4 py-2 rounded-lg" onClick={() => setShowMakeDonation(true)}>
           🎁 Make a Donation
         </Button>
-        <Button
-          className="bg-gray-600 text-white px-4 py-2 rounded-lg"
-          onClick={() => setShowDuesHistory(true)}
-        >
+        <Button className="bg-gray-600 text-white px-4 py-2 rounded-lg" onClick={() => setShowDuesHistory(true)}>
           📜 View Dues History
         </Button>
-        <Link href={`/isusu/${id}/post`}>
-          <Button className="bg-purple-600 text-white px-4 py-2 rounded-lg">
-            📝 Create Post
-          </Button>
+        <Link href={`/isusu/${isusuId}/post`}>
+          <Button className="bg-blue-600 text-white px-4 py-2 rounded-lg">📝 Create a Post</Button>
         </Link>
-        <Link href={`/isusu/${id}/loan-request`}>
-          <Button className="bg-red-400 text-white px-4 py-2 rounded-lg">
-            💵 Request for Loan
-          </Button>
-        </Link>
+        {currentTier?.permissions.loanAccess && (
+          <Link href={`/isusu/${isusuId}/loan-request`}>
+            <Button className="bg-red-400 text-white px-4 py-2 rounded-lg">💵 Request for Loan</Button>
+          </Link>
+        )}
       </div>
 
-      {/* Render Modals */}
-      {showDuesHistory && <DuesHistory isusuId={id} onClose={() => setShowDuesHistory(false)} />}
-      {showMakeDonation && <MakeDonation isusuId={id} onClose={() => setShowMakeDonation(false)} />}
+      {showDuesHistory && <DuesHistory isusuId={isusuId} onClose={() => setShowDuesHistory(false)} />}
+      {showMakeDonation && <MakeDonation isusuId={isusuId} onClose={() => setShowMakeDonation(false)} />}
 
-      {/* Dashboard Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 bg-orange-100 p-4 rounded-lg">
-        {/* Full-width Leaderboard */}
         <div className="lg:col-span-4">
           <Leaderboard />
         </div>
-
-        {/* Left Pane - Members List */}
         <div className="lg:col-span-1">
-          <MembersList isusuId={id} />
+          <MembersList isusuId={isusuId} />
         </div>
-
-        {/* Main Content: Create Post + Posts (left) & Transaction Timeline (right) */}
         <div className="lg:col-span-3 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left Section - Create Post & Posts */}
-            <div className="md:col-span-1 space-y-6">
-              <CreatePost /> {/* Ensure Create Post appears first */}
-              <Posts isusuId={id} />
+            <div className="space-y-6">
+              <CreatePost />
+              <Posts isusuId={isusuId} />
             </div>
-
-            {/* Right Section - Transaction Timeline */}
-            <div className="md:col-span-1">
+            <div>
               <TransactionTimeline />
             </div>
           </div>

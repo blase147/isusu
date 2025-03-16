@@ -38,8 +38,8 @@ const ChatBox = () => {
 
 const IsusuInfo = () => (
   <div className="bg-white p-4 rounded shadow">
-    <h2 className="text-lg md:text-xl font-semibold">Welcome to Your Isusu Dashboard!</h2>
-    <p className="text-sm md:text-base">Congratulations on signing up and joining Isusu! Here’s everything you need to know:</p>
+    <h2 className="text-lg md:text-xl font-semibold">Welcome to Your Isusu App!</h2>
+    <p className="text-sm md:text-base">Congratulations on signing up! Here’s everything you need to know:</p>
 
     <h3 className="font-semibold mt-4">Your Obligations & Responsibilities</h3>
     <ul className="list-disc pl-5 text-sm">
@@ -112,7 +112,6 @@ const Page = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-6">
-        <h2 className="text-xl md:text-2xl font-semibold mb-4">Activity Timeline</h2>
 
         <IsusuInfo />
 

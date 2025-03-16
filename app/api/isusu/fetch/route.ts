@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth } from "@/auth";
+import tiers from './../../../lib/utils';
 
 const prisma = new PrismaClient();
 
@@ -25,8 +26,8 @@ export async function GET() {
     const isusus = await prisma.isusu.findMany({
       where: {
         OR: [
-          { createdById: user.id }, // Groups created by user
-          { members: { some: { userId: user.id } } }, // Groups joined by user
+          { createdById: user.id },
+          { members: { some: { userId: user.id } } },
         ],
       },
       select: {
@@ -36,30 +37,36 @@ export async function GET() {
         frequency: true,
         milestone: true,
         createdById: true,
-        invite_code: true, // Ensure invite_code is included
+        invite_code: true,
         isActive: true,
+        tier: true, // Fetch tier name
         members: {
           select: {
-            userId: true, // Fetch user IDs of members
+            userId: true,
           },
         },
       },
     });
 
-    // Split groups into "created" and "joined"
-    const createdIsusus = isusus
-      .filter((isusu) => isusu.createdById === user.id)
-      .map((isusu) => ({
-        ...isusu,
-        memberCount: isusu.members.length, // Count members
-      }));
+    // Apply tier settings
+    const processedIsusus = isusus.map((isusu) => {
+      const tierName = isusu.tier ? isusu.tier.trim().toLowerCase() : "tier 1"; // Default to Tier 1
 
-    const joinedIsusus = isusus
-      .filter((isusu) => isusu.createdById !== user.id)
-      .map((isusu) => ({
+      const tierConfig = tiers.find((t) => t.name.toLowerCase() === tierName) || { permissions: {} }; // Ensure permissions property exists
+
+      return {
         ...isusu,
-        memberCount: isusu.members.length, // Count members
-      }));
+        memberCount: isusu.members.length,
+        settings: tierConfig.permissions || {}, // Only pass permissions, not the whole object
+      };
+    });
+
+
+
+
+    // Split groups into "created" and "joined"
+    const createdIsusus = processedIsusus.filter((isusu) => isusu.createdById === user.id);
+    const joinedIsusus = processedIsusus.filter((isusu) => isusu.createdById !== user.id);
 
     return NextResponse.json({ created: createdIsusus, joined: joinedIsusus }, { status: 200 });
   } catch (error) {

@@ -16,6 +16,7 @@ interface IsusuGroup {
   id: string;
   invite_code: string;
   isusuName: string;
+  tier: string;
   isusuClass: string;
   frequency: string;
   milestone: number;
@@ -158,17 +159,17 @@ const ManageIsusu = () => {
         </div>
 
         {/* Content */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
           {(activeTab === "created" ? createdIsusus : joinedIsusus).length > 0 ? (
             (activeTab === "created" ? createdIsusus : joinedIsusus).map((group) => (
               <div
                 key={group.id}
                 className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm mx-auto"
               >
+                <p>{group.tier}</p>
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <p className="text-xl font-bold text-blue-600">{group.isusuName}</p>
-
                     {activeTab === "created" && (
                       <>
                         {/* Invite Code */}
