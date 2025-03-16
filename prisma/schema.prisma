@@ -103,6 +103,7 @@ model Isusu {
   notifications      Notification[]        @relation("IsusuNotifications") // Existing relation
   purchases          IsusuPurchase[]       // Add this field to complete the relation with IsusuPurchase
   price              Float?
+  tier               String
 }
 
 model IsusuPurchase {

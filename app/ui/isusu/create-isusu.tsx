@@ -7,9 +7,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PaystackButton } from "react-paystack";
 import { useSession } from "next-auth/react";
 
+
 const CreateIsusu = () => {
-const { data: session } = useSession();
-const userId = session?.user?.id;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isusuName, setIsusuName] = useState("");
@@ -22,7 +21,35 @@ const userId = session?.user?.id;
   const [tier, setTier] = useState<string>(""); // Name for isusuPurchase
   const [publicKey, setPublicKey] = useState<string>("");
 
-  const userEmail = "user@example.com"; // Replace with dynamic email if available
+  interface User {
+    name: string;
+    email: string;
+  }
+
+  const [user, setUser] = useState<User | null>(null);
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/user");
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        const data = await response.json();
+        setUser(data);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+
+
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+
 
 
   useEffect(() => {
@@ -84,7 +111,7 @@ const handleSuccess = async (response: { reference: string }) => {
 
   try {
     // Step 1: Verify the payment using Paystack reference
-    const verifyResponse = await fetch("/api/paystack/verify", {
+    const verifyResponse = await fetch("/api/paystack-me/verify", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -107,7 +134,7 @@ const handleSuccess = async (response: { reference: string }) => {
         console.log("Sending isusuPurchase request:", {
           isusuId,
           userId,
-          tier,
+          tier: tier,
           amount: Number(amount),
           status: "COMPLETED",
           paystackReference: response.reference,
@@ -131,7 +158,6 @@ const handleSuccess = async (response: { reference: string }) => {
 
         if (isusuPurchaseResponse.ok) {
           if (userId) {
-            await updateWallet(userId, Number(amount));
           } else {
             console.error("User ID is undefined");
           }
@@ -156,17 +182,6 @@ const handleSuccess = async (response: { reference: string }) => {
   }
 };
 
-  const updateWallet = async (userId: string, amount: number) => {
-    try {
-      await fetch("/api/isusu/IGR", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, amount }),
-      });
-    } catch (error) {
-      console.error("Error updating wallet:", error);
-    }
-  };
 
 const createIsusuGroup = async () => {
   try {
@@ -177,6 +192,7 @@ const createIsusuGroup = async () => {
       },
       body: JSON.stringify({
         isusuName,
+        tier,
         frequency,
         milestone: Number(milestone),
         isusuClass,
@@ -286,7 +302,7 @@ const createIsusuGroup = async () => {
               className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 w-full"
               publicKey={publicKey}
               amount={Number(amount) * 100}
-              email={userEmail}
+              email={user ? user.email : "user@domain.com"}
               currency={"NGN"}
               onSuccess={handleSuccess}
               onClose={() => alert("Transaction was closed!")}

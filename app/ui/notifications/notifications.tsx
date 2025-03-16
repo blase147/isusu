@@ -35,10 +35,12 @@ export default function Notifications() {
       }
     };
 
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 900000000);
-    return () => clearInterval(interval);
-  }, [userId]);
+    fetchNotifications(); // Initial fetch
+
+    const interval = setInterval(fetchNotifications, 60000); // ✅ Fetch every 60 seconds
+    return () => clearInterval(interval); // ✅ Cleanup on unmount
+
+  }, [userId]); // ✅ Dependency array only includes userId
 
   return (
     <div className="max-w-lg mx-auto p-4 bg-white shadow-lg rounded-lg">

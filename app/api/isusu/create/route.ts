@@ -18,9 +18,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Request body is missing" }, { status: 400 });
     }
 
-    const { isusuName, isusuClass, frequency, milestone } = body;
+    const { isusuName, tier, isusuClass, frequency, milestone } = body;
 
-    if (!isusuName || !isusuClass || !frequency || milestone == null) {
+    if (!isusuName || !tier || !isusuClass || !frequency || milestone == null) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -48,6 +48,7 @@ export async function POST(req: Request) {
       const isusu = await tx.isusu.create({
         data: {
           isusuName,
+          tier,
           isusuClass,
           frequency,
           milestone,

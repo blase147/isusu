@@ -8,13 +8,37 @@ export default function Deposit() {
   const router = useRouter();
   const [amount, setAmount] = useState<string>(""); // Allow empty input
   const [publicKey, setPublicKey] = useState<string>("");
-  const userEmail = "user@example.com"; // Replace with actual user email
+  const [user, setUser] = useState<User | null>(null);
+
+  const userEmail = user?.email; // Replace with actual user email
 
   useEffect(() => {
     setPublicKey(process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "");
   }, []);
 
   const currency = "NGN"; // Nigerian Naira
+
+  interface User {
+    email: string;
+  }
+
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/user");
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        const data = await response.json();
+        setUser(data);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleSuccess = async (response: { reference: string }) => {
     console.log("Payment Success:", response);
@@ -70,7 +94,7 @@ export default function Deposit() {
             className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 w-full"
             publicKey={publicKey}
             amount={Number(amount) * 100} // Convert Naira to kobo
-            email={userEmail}
+            email={userEmail || ""}
             currency={currency}
             onSuccess={handleSuccess}
             onClose={() => alert("Transaction was closed!")}
