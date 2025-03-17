@@ -141,9 +141,12 @@ const IsusuDashboard = () => {
                 <Button className="bg-blue-500 text-white px-4 py-2 rounded-lg">✏️ Edit Group Profile</Button>
               </Link>
 
-              <Link href={`/isusu/${isusuId}/members`}>
-                <Button className="bg-indigo-500 text-white px-4 py-2 rounded-lg">🛠️ Manage Members</Button>
-              </Link>
+            <Link href={`/dashboard/manage-members/${isusuId}`}>
+              <Button className="bg-indigo-500 text-white px-4 py-2 rounded-lg">
+                🛠️ Manage Members
+              </Button>
+            </Link>
+
 
           </>
         )}
