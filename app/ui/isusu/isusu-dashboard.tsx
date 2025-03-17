@@ -12,10 +12,12 @@ import DuesHistory from "./dues-history";
 import CreatePost from "./create-post";
 import MakeDonation from "./make-donation";
 import tiers from "../../lib/utils";
+import { useSession } from "next-auth/react";
 
 const IsusuDashboard = () => {
   const { id } = useParams();
   const isusuId = Array.isArray(id) ? id[0] : id ?? "";
+  const { data: session } = useSession(); // Get session from NextAuth
 
   const [isusuName, setIsusuName] = useState("");
   const [isusuTier, setIsusuTier] = useState("");
@@ -23,6 +25,11 @@ const IsusuDashboard = () => {
   const [error, setError] = useState("");
   const [showDuesHistory, setShowDuesHistory] = useState(false);
   const [showMakeDonation, setShowMakeDonation] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+
+
+  const userId = session?.user?.id;
 
   useEffect(() => {
     if (!isusuId) {
@@ -32,90 +39,121 @@ const IsusuDashboard = () => {
 
     const fetchData = async () => {
       try {
-        const [isusuRes, walletRes] = await Promise.all([
+        const [isusuRes, walletRes, userRes] = await Promise.all([
           fetch(`/api/isusu/fetch?isusuId=${isusuId}`),
-          fetch(`/api/wallet/group-balance?isusuId=${isusuId}`)
+          fetch(`/api/wallet/group-balance?isusuId=${isusuId}`),
+          fetch("/api/user"),
         ]);
 
         if (!isusuRes.ok) throw new Error("Failed to fetch Isusu group");
         if (!walletRes.ok) throw new Error("Failed to fetch wallet balance");
+        if (!userRes.ok) throw new Error("Failed to fetch user data");
 
         const isusuData = await isusuRes.json();
         const walletData = await walletRes.json();
+        const userData = await userRes.json();
 
-        const isusu = isusuData.created?.find((group: { id: string }) => group.id === isusuId) ||
+
+        const isusu =
+          isusuData.created?.find((group: { id: string }) => group.id === isusuId) ||
           isusuData.joined?.find((group: { id: string }) => group.id === isusuId);
 
         if (!isusu) throw new Error("Isusu group not found");
 
         setIsusuName(isusu.isusuName);
         setIsusuTier(isusu.tier || "Unknown Tier");
+        setWalletBalance(walletData.balance ?? 0);
 
-        setWalletBalance(walletData.balance || 0);
+        setIsAdmin(Array.isArray(isusu.admins) && isusu.admins.includes(userData.id));
+
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message || "An unknown error occurred");
-        } else {
-          setError("An unknown error occurred");
-        }
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
       }
     };
 
     fetchData();
-  }, [isusuId]);
+  }, [isusuId, userId]);
 
   const formattedTier = `Tier ${isusuTier.replace(/\D/g, "")}`.trim();
-  const currentTier = tiers.find((tier) => tier.name === formattedTier);
+  const currentTier = tiers?.find((tier) => tier.name === formattedTier);
 
   if (!currentTier) {
     console.warn("Warning: Tier not found for:", isusuTier);
   }
-  const isAdmin = true; // Replace with actual admin check
 
 
   return (
     <div className="container mx-auto p-4 space-y-4 text-black-900 mt-4">
+      {/* Group Info */}
       <div className="flex flex-wrap justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-800">📊 {isusuName}</h2>
         <h2 className="text-3xl font-bold text-gray-800">{isusuTier}</h2>
+
+        {/* Wallet Balance Display */}
         <div className="bg-white p-4 rounded-lg shadow-md text-center">
-
-          {(currentTier?.visibility?.walletBalance === 'Visible to all members' ||
-            (currentTier?.visibility?.walletBalance === 'Visible to only Admin' && isAdmin)) && (
-              <Link href={`/isusu/${isusuId}/loan-request`}>
-                <h2 className="text-lg font-semibold">Group Wallet</h2>
-                <p className="text-xl font-bold">
-                  {walletBalance !== null ? `N${walletBalance.toLocaleString()}` : "Loading..."}
-                </p>
-              </Link>
-            )}
-
-
-
+          {(currentTier?.visibility?.walletBalance || isAdmin) && (
+            <Link href={`/isusu/${isusuId}/loan-request`}>
+              <h2 className="text-lg font-semibold">Group Wallet</h2>
+              <p className="text-xl font-bold">
+                {walletBalance !== null ? `N${walletBalance.toLocaleString()}` : "Loading..."}
+              </p>
+            </Link>
+          )}
         </div>
+
+
         {error && <p className="text-red-500 font-semibold">{error}</p>}
       </div>
 
-      <div className="flex flex-wrap gap-4 bg-gray-100 p-4 rounded-lg">
+      {/* Action Buttons */}
+      <div className="flex flex-wrap justify-center gap-4 bg-gray-100 p-4 rounded-lg">
         <Button className="bg-green-600 text-white px-4 py-2 rounded-lg" onClick={() => setShowMakeDonation(true)}>
           🎁 Make a Donation
         </Button>
         <Button className="bg-gray-600 text-white px-4 py-2 rounded-lg" onClick={() => setShowDuesHistory(true)}>
           📜 View Dues History
         </Button>
-        <Link href={`/isusu/${isusuId}/post`}>
-          <Button className="bg-blue-600 text-white px-4 py-2 rounded-lg">📝 Create a Post</Button>
-        </Link>
-        {currentTier?.permissions.loanAccess && (
+
+        {currentTier?.permissions?.loanAccess && (
           <Link href={`/isusu/${isusuId}/loan-request`}>
             <Button className="bg-red-400 text-white px-4 py-2 rounded-lg">💵 Request for Loan</Button>
           </Link>
         )}
+
+        {currentTier?.visibility?.transactions && (
+          <Link href={`/isusu/${isusuId}/transactions`}>
+            <Button className="bg-gray-700 text-white px-4 py-2 rounded-lg">📊 Transaction History</Button>
+          </Link>
+        )}
+
+        {/* Admin-Only Buttons */}
+        {isAdmin && (
+          <>
+              <Link href={`/isusu/${isusuId}/announcement`}>
+                <Button className="bg-yellow-600 text-white px-4 py-2 rounded-lg">📢 Make Announcement</Button>
+              </Link>
+
+              <Link href={`/isusu/${isusuId}/withdraw`}>
+                <Button className="bg-red-500 text-white px-4 py-2 rounded-lg">💰 Withdraw Funds</Button>
+              </Link>
+
+              <Link href={`/isusu/${isusuId}/edit`}>
+                <Button className="bg-blue-500 text-white px-4 py-2 rounded-lg">✏️ Edit Group Profile</Button>
+              </Link>
+
+              <Link href={`/isusu/${isusuId}/members`}>
+                <Button className="bg-indigo-500 text-white px-4 py-2 rounded-lg">🛠️ Manage Members</Button>
+              </Link>
+
+          </>
+        )}
       </div>
 
+      {/* Popups */}
       {showDuesHistory && <DuesHistory isusuId={isusuId} onClose={() => setShowDuesHistory(false)} />}
       {showMakeDonation && <MakeDonation isusuId={isusuId} onClose={() => setShowMakeDonation(false)} />}
 
+      {/* Dashboard Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 bg-orange-100 p-4 rounded-lg">
         <div className="lg:col-span-4">
           <Leaderboard />

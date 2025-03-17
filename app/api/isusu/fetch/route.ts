@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth } from "@/auth";
-import tiers from './../../../lib/utils';
+import tiers from "./../../../lib/utils";
 
 const prisma = new PrismaClient();
+
+// Convert tiers to a Map for quick lookups
+interface TierConfig {
+  permissions?: {
+    admins?: boolean;
+  };
+}
+
+const tierMap = new Map<string, TierConfig>(tiers.map((tier) => [tier.name.toLowerCase(), tier]));
 
 export async function GET() {
   try {
@@ -50,18 +59,16 @@ export async function GET() {
 
     // Apply tier settings
     const processedIsusus = isusus.map((isusu) => {
-      const tierName = isusu.tier ? isusu.tier.trim().toLowerCase() : "tier 1"; // Default to Tier 1
-
-      const tierConfig = tiers.find((t) => t.name.toLowerCase() === tierName) || { permissions: {} }; // Ensure permissions property exists
+      const tierName = isusu.tier?.trim().toLowerCase() || "tier 1";
+      const tierConfig = tierMap.get(tierName) || {};
 
       return {
         ...isusu,
         memberCount: isusu.members.length,
-        settings: tierConfig.permissions || {}, // Only pass permissions, not the whole object
+        settings: tierConfig,
+        admins: [isusu.createdById], // Add admin user ID(s)
       };
     });
-
-
 
 
     // Split groups into "created" and "joined"

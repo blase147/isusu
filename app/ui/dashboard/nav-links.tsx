@@ -1,24 +1,33 @@
 'use client';
 
 import {
-  UserGroupIcon,
   HomeIcon,
-  DocumentDuplicateIcon,
+  CurrencyDollarIcon,
+  UsersIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
-// Define navigation links
+// Define navigation links with appropriate icons
 const links = [
   { name: 'Home', href: '/dashboard', icon: HomeIcon },
   {
     name: 'Transactions',
     href: '/dashboard/transactions',
-    icon: DocumentDuplicateIcon,
+    icon: CurrencyDollarIcon, // 💰 Represents financial transactions
   },
-  { name: 'Isusu', href: '/dashboard/manage-isusu', icon: UserGroupIcon },
-  { name: 'Edit Profile', href: '/dashboard/edit-profile', icon: UserGroupIcon },
+  {
+    name: 'Isusu',
+    href: '/dashboard/manage-isusu',
+    icon: UsersIcon, // 👥 Represents group savings
+  },
+  {
+    name: 'Edit Profile',
+    href: '/dashboard/edit-profile',
+    icon: PencilSquareIcon, // ✏️ Represents profile editing
+  },
 ];
 
 export default function NavLinks() {
@@ -28,7 +37,7 @@ export default function NavLinks() {
     <>
       {links.map((link) => {
         const LinkIcon = link.icon;
-        const isActive = pathname.startsWith(link.href); // Match active state
+        const isActive = pathname.startsWith(link.href); // Check active state
 
         return (
           <Link
@@ -41,7 +50,7 @@ export default function NavLinks() {
               },
             )}
           >
-            <LinkIcon className="w-6" />
+            <LinkIcon className="w-6 h-6" />
             <p className="hidden md:block">{link.name}</p>
           </Link>
         );

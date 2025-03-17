@@ -22,6 +22,7 @@ model User {
   posts                Post[]                // Correctly added posts earlier
   notifications        Notification[]        @relation("UserNotifications")
   isusuPurchases       IsusuPurchase[]       @relation("UserIsusuPurchases")
+  isususAdminFor Isusu[] @relation("IsusuAdmins")  // Reverse relation for admins
 }
 
 model Wallet {
@@ -104,6 +105,7 @@ model Isusu {
   purchases          IsusuPurchase[]       // Add this field to complete the relation with IsusuPurchase
   price              Float?
   tier               String
+  admins          User[]    @relation("IsusuAdmins") // Many-to-many relation
 }
 
 model IsusuPurchase {
