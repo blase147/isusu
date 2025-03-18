@@ -1,9 +1,15 @@
+"use client";
+
+import { useParams } from "next/navigation";
 import ManageMembers from '@/app/ui/isusu/manage-members';
 
-interface PageProps {
-    params: { isusuId: string };
-}
+export default function Page() {
+    const params = useParams();
+    const isusuId = params?.isusuId as string;
 
-export default function Page({ params }: PageProps) {
-    return <ManageMembers isusuId={params.isusuId} />;
+    if (!isusuId) {
+        return <p>Error: Missing isusuId</p>;
+    }
+
+    return <ManageMembers isusuId={isusuId} />;
 }

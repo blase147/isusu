@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { UserIcon, ShieldCheckIcon, XCircleIcon } from '@heroicons/react/24/outline';
-import clsx from 'clsx';
+import { useState, useEffect, useCallback } from "react";
+import { UserIcon, ShieldCheckIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import clsx from "clsx";
 
 interface Member {
     id: string;
@@ -16,62 +16,57 @@ export default function ManageMembers({ isusuId }: { isusuId: string }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchMembers = async () => {
-            try {
-                const res = await fetch(`/api/isusu/members-list?isusuId=${isusuId}`);
-                if (!res.ok) throw new Error('Failed to fetch members');
+    // ✅ Memoized fetchMembers to avoid unnecessary re-renders
+    const fetchMembers = useCallback(async () => {
+        try {
+            setLoading(true);
+            console.log(`🔄 Fetching members for isusuId: ${isusuId}`);
 
-                const data = await res.json();
-                console.log("Fetched members data:", data); // Debugging
+            const res = await fetch(`/api/isusu/members-list?isusuId=${isusuId}`);
+            if (!res.ok) throw new Error("Failed to fetch members");
 
-                if (!data.members || !Array.isArray(data.members)) {
-                    throw new Error("Invalid response format");
-                }
+            const data = await res.json();
+            console.log("📥 Members fetched:", data);
 
-                setMembers(data.members); // ✅ Correct: Set only the 'members' array
-            } catch (err) {
-                setError((err as Error).message);
-            } finally {
-                setLoading(false);
+            if (!data.members || !Array.isArray(data.members)) {
+                throw new Error("Invalid response format");
             }
-        };
 
+            setMembers(data.members);
+        } catch (err) {
+            console.error("❌ Error fetching members:", err);
+            setError((err as Error).message);
+        } finally {
+            setLoading(false);
+        }
+    }, [isusuId]); // ✅ Only re-run if isusuId changes
 
+    useEffect(() => {
         fetchMembers();
-    }, [isusuId]);
+    }, [fetchMembers]); // ✅ Fixes ESLint warning
 
+    // ✅ Toggle admin status & update members state
     const toggleAdmin = async (memberId: string) => {
         try {
-            const res = await fetch(`/api/isusu/toggle-admin`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ memberId, isusuId }),
+            const res = await fetch("/api/isusu/toggle-admin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isusuId, memberId }),
             });
 
-            // 🔍 Check if response is empty
-            const text = await res.text();
-            console.log("Raw response text:", text);
-
-            if (!text) throw new Error("Empty response from server");
-
-            const data = JSON.parse(text); // Convert text to JSON manually
-            console.log("Parsed JSON:", data);
-
-            if (!res.ok) throw new Error(data.error || 'Failed to update admin status');
-
-            setMembers((prev) =>
-                prev.map((member) =>
-                    member.id === memberId ? { ...member, isAdmin: !member.isAdmin } : member
-                )
-            );
-        } catch (err) {
-            console.error("Error toggling admin:", err);
-            setError((err as Error).message);
+            const data = await res.json();
+            if (data.success) {
+                // ✅ Update `isAdmin` inside `members`
+                setMembers((prevMembers) =>
+                    prevMembers.map((member) =>
+                        member.id === memberId ? { ...member, isAdmin: !member.isAdmin } : member
+                    )
+                );
+            }
+        } catch (error) {
+            console.error("Failed to toggle admin:", error);
         }
     };
-
-
 
     if (loading) return <p>Loading members...</p>;
     if (error) return <p className="text-red-500">{error}</p>;
@@ -94,11 +89,15 @@ export default function ManageMembers({ isusuId }: { isusuId: string }) {
                             </div>
                         </div>
 
+                        {/* ✅ Dynamically update button text based on `isAdmin` */}
                         <button
+                            type="button"
                             onClick={() => toggleAdmin(member.id)}
                             className={clsx(
-                                'flex items-center gap-2 px-3 py-1 rounded-lg text-white transition',
-                                member.isAdmin ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
+                                "flex items-center gap-2 px-3 py-1 rounded-lg text-white transition",
+                                member.isAdmin
+                                    ? "bg-red-500 hover:bg-red-600"
+                                    : "bg-green-500 hover:bg-green-600"
                             )}
                         >
                             {member.isAdmin ? (

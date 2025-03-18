@@ -5,18 +5,15 @@ const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   try {
-    // Extract searchParams from the request URL
+    // Extract `isusuId` from request URL
     const url = new URL(req.url);
-    console.log("Full API Request URL:", url.href); // Log full URL for debugging
-
     const isusuId = url.searchParams.get("isusuId");
-    console.log("Extracted isusuId:", isusuId); // Log the extracted ID
 
     if (!isusuId) {
       return NextResponse.json({ error: "No Isusu ID provided. Please check the URL." }, { status: 400 });
     }
 
-    // Fetch the Isusu group along with its members based on the isusuId
+    // Fetch Isusu group with both members and admins
     const isusuGroup = await prisma.isusu.findUnique({
       where: { id: isusuId },
       include: {
@@ -27,6 +24,11 @@ export async function GET(req: Request) {
             },
           },
         },
+        admins: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
@@ -34,14 +36,20 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Isusu group not found" }, { status: 404 });
     }
 
-    // Return the group name and members
+    // Extract admin IDs for quick lookup
+    const adminIds = new Set(isusuGroup.admins.map((admin) => admin.id));
+
+    // Format members list and check admin status
+    const membersWithAdminStatus = isusuGroup.members.map((member) => ({
+      id: member.user.id,
+      name: member.user.name || "Unknown",
+      email: member.user.email,
+      isAdmin: adminIds.has(member.user.id), // Check if the user is an admin
+    }));
+
     return NextResponse.json({
-      isusuName: isusuGroup.isusuName, // Assuming 'isusuName' is a column in your 'isusu' table
-      members: isusuGroup.members.map((member) => ({
-        id: member.user.id,
-        name: member.user.name || "Unknown",
-        email: member.user.email,
-      })),
+      isusuName: isusuGroup.isusuName,
+      members: membersWithAdminStatus,
     });
 
   } catch (error) {
