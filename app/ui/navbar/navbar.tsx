@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { BellIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { BellIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 import Notifications from "../notifications/notifications";
+import Image from "next/image";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,35 +15,40 @@ const Navbar = () => {
   interface User {
     name: string;
     email: string;
+    profilePicture?: string;
   }
 
   const [user, setUser] = useState<User | null>(null);
 
-  // Fetch user data from API
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const response = await fetch("/api/user");
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
+        if (!response.ok) throw new Error("Failed to fetch user data");
+
         const data = await response.json();
-        setUser(data);
+
+        // Use provided profile picture, or fallback to a default image
+        setUser({
+          ...data,
+          profilePicture: data.profilePicture?.startsWith("http")
+            ? data.profilePicture
+            : "/default-avatar.png", // Ensure default is used only if null/empty
+        });
       } catch (error) {
         console.error("Error fetching user:", error);
       }
     };
+
     fetchUser();
   }, []);
 
-  // Fetch notification count
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const response = await fetch("/api/notifications");
-        if (!response.ok) {
-          throw new Error("Failed to fetch notifications");
-        }
+        if (!response.ok) throw new Error("Failed to fetch notifications");
+
         const data = await response.json();
         setNotificationCount(data.length);
       } catch (error) {
@@ -51,11 +57,10 @@ const Navbar = () => {
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000); // Refresh every 10 seconds
+    const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -68,9 +73,7 @@ const Navbar = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -78,7 +81,6 @@ const Navbar = () => {
       <div className="text-2xl font-bold text-gray-800">Dashboard</div>
 
       <div className="flex items-center gap-4">
-        {/* Notification Bell */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setIsNotifOpen(!isNotifOpen)}
@@ -91,7 +93,6 @@ const Navbar = () => {
               </span>
             )}
           </button>
-
           {isNotifOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white shadow-md rounded-md p-2 border">
               <Notifications />
@@ -99,14 +100,36 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* User Profile Dropdown */}
+        <button title="Messages" className="text-gray-600 hover:text-gray-900 focus:outline-none">
+          <ChatBubbleLeftIcon className="h-6 w-6" />
+        </button>
+
         <div className="relative" ref={userRef}>
           <button
             title="User Menu"
             onClick={() => setIsOpen(!isOpen)}
             className="flex items-center gap-2 text-gray-700 hover:text-gray-900 focus:outline-none"
           >
-            <UserCircleIcon className="h-8 w-8" />
+            {user?.profilePicture ? (
+              <Image
+                src={user.profilePicture}
+                alt="User"
+                width={32}
+                height={32}
+                className="rounded-full object-cover"
+                unoptimized={user.profilePicture.includes("cloudinary")}
+              />
+            ) : (
+              <Image
+                src="/default-avatar.png"
+                alt="Default Avatar"
+                width={32}
+                height={32}
+                className="rounded-full object-cover"
+              />
+            )}
+
+
           </button>
 
           {isOpen && (
@@ -117,7 +140,7 @@ const Navbar = () => {
               <div className="px-4 py-2 text-gray-700 text-sm font-semibold border-b">
                 {user ? user.email : "Loading..."}
               </div>
-              <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+              <a href="/dashboard/user-profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
                 Profile
               </a>
               <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth"; // ✅ Import `auth` instead of `getServerSession`
+import { auth } from "@/auth"; // ✅ Correct import for authentication
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -16,7 +16,7 @@ export async function GET() {
         // Fetch user from database using session email
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
-            select: { id: true, name: true, email: true }, // Select only needed fields
+            select: { id: true, name: true, email: true, profilePicture: true }, // ✅ Ensure profilePicture is included
         });
 
         if (!user) {

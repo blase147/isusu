@@ -4,7 +4,6 @@ import { auth } from "@/auth";
 import tiers from "./../../../lib/utils";
 
 const prisma = new PrismaClient();
-const cloudinaryBaseUrl = "https://res.cloudinary.com/YOUR_CLOUD_NAME/image/upload/";
 
 // Convert tiers to a Map for quick lookups
 interface TierConfig {
@@ -25,19 +24,12 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: { id: true, profilePicture: true }, // Fetch profilePicture
+      select: { id: true },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-
-    // Format Cloudinary image URL
-    const profilePictureUrl = user.profilePicture
-      ? `${cloudinaryBaseUrl}w_200,h_200,c_fill/${user.profilePicture}`
-      : null;
-
-
 
     // Fetch all Isusu groups the user is involved in
     const isusus = await prisma.isusu.findMany({
@@ -78,14 +70,12 @@ export async function GET() {
       };
     });
 
+
     // Split groups into "created" and "joined"
     const createdIsusus = processedIsusus.filter((isusu) => isusu.createdById === user.id);
     const joinedIsusus = processedIsusus.filter((isusu) => isusu.createdById !== user.id);
 
-    return NextResponse.json(
-      { profilePicture: profilePictureUrl, created: createdIsusus, joined: joinedIsusus },
-      { status: 200 }
-    );
+    return NextResponse.json({ created: createdIsusus, joined: joinedIsusus }, { status: 200 });
   } catch (error) {
     console.error("Error fetching user Isusus:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

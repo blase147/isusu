@@ -106,7 +106,8 @@ export default function Page() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-12 bg-white">
+      <section className="py-12 bg-white text-center">
+        <h3 className="text-3xl font-bold text-blue-600 mb-6">See Isusu App in Action</h3>
         <div className="container mx-auto text-center">
           <h3 className="text-3xl font-bold text-blue-600 mb-6">How It Works</h3>
           <ol className="list-decimal list-inside space-y-4 text-gray-700">
@@ -116,7 +117,14 @@ export default function Page() {
             <li>Celebrate milestones and achieve financial goals together!</li>
           </ol>
         </div>
+        <div className="container mx-auto">
+          <video className="w-full max-w-2xl mx-auto rounded-lg shadow-lg" controls>
+            <source src="/isusu-demo.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
       </section>
+
 
       {/* Call to Action */}
       <section className="py-12 bg-blue-600 text-white text-center">

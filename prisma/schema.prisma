@@ -12,18 +12,27 @@ model User {
   email                String                @unique
   name                 String?
   password             String
+  profilePicture       String?               // Field for profile picture URL
+  phone                String?               // Field for phone number
+  dateOfBirth          DateTime?             // Field for date of birth
+  address              String?               // New field for address
+  biography            String?               // New field for biography
+  bankAccount          String?               // New field for bank account
+  occupation           String?               // New field for occupation
+
   createdIsusus        Isusu[]               @relation("CreatedIsusus")
-  isusuMemberships     IsusuMembers[]        // This relation was added correctly earlier
+  isusuMemberships     IsusuMembers[]
   receivedTransactions Transaction[]         @relation("ReceivedTransactions")
   sentTransactions     Transaction[]         @relation("SentTransactions")
   walletId             String?               @unique
   wallet               Wallet?               @relation("UserWallet", fields: [walletId], references: [id])
   timelines            TransactionTimeline[] @relation("UserTimelines")
-  posts                Post[]                // Correctly added posts earlier
+  posts                Post[]
   notifications        Notification[]        @relation("UserNotifications")
   isusuPurchases       IsusuPurchase[]       @relation("UserIsusuPurchases")
-  isususAdminFor Isusu[] @relation("IsusuAdmins")  // Reverse relation for admins
+  isususAdminFor       Isusu[]               @relation("IsusuAdmins")
 }
+
 
 model Wallet {
   id        String   @id @default(uuid())

@@ -25,7 +25,7 @@ const links = [
   },
   {
     name: 'Edit Profile',
-    href: '/dashboard/edit-profile',
+    href: '/dashboard/user-profile/edit-profile',
     icon: PencilSquareIcon, // ✏️ Represents profile editing
   },
 ];
