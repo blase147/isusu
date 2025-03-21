@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import tiers from './../../../../lib/utils';
+import tiers from '../../../../lib/utils';
 
 const prisma = new PrismaClient();
 

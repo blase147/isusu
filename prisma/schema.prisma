@@ -8,17 +8,17 @@ datasource db {
 }
 
 model User {
-  id                   String                @id @default(uuid())
-  email                String                @unique
-  name                 String?
-  password             String
-  profilePicture       String?               // Field for profile picture URL
-  phone                String?               // Field for phone number
-  dateOfBirth          DateTime?             // Field for date of birth
-  address              String?               // New field for address
-  biography            String?               // New field for biography
-  bankAccount          String?               // New field for bank account
-  occupation           String?               // New field for occupation
+  id             String    @id @default(uuid())
+  email          String    @unique
+  name           String?
+  password       String
+  profilePicture String? // Field for profile picture URL
+  phone          String? // Field for phone number
+  dateOfBirth    DateTime? // Field for date of birth
+  address        String? // New field for address
+  biography      String? // New field for biography
+  bankAccount    String? // New field for bank account
+  occupation     String? // New field for occupation
 
   createdIsusus        Isusu[]               @relation("CreatedIsusus")
   isusuMemberships     IsusuMembers[]
@@ -31,8 +31,8 @@ model User {
   notifications        Notification[]        @relation("UserNotifications")
   isusuPurchases       IsusuPurchase[]       @relation("UserIsusuPurchases")
   isususAdminFor       Isusu[]               @relation("IsusuAdmins")
+  dues                 IsusuDues[]
 }
-
 
 model Wallet {
   id        String   @id @default(uuid())
@@ -102,37 +102,49 @@ model Isusu {
   createdById        String
   isActive           Boolean               @default(false)
   createdBy          User                  @relation("CreatedIsusus", fields: [createdById], references: [id])
-  members            IsusuMembers[]        // Existing relation
+  members            IsusuMembers[] // Existing relation
   walletId           String?               @unique
   wallet             Wallet?               @relation("IsusuWallet", fields: [walletId], references: [id])
   transactions       Transaction[]         @relation("IsusuTransactions")
   timelines          TransactionTimeline[] @relation("IsusuTimelines")
   contributionAmount Float?
   startDate          DateTime?
-  posts              Post[]                // Existing relation
+  posts              Post[] // Existing relation
   notifications      Notification[]        @relation("IsusuNotifications") // Existing relation
-  purchases          IsusuPurchase[]       // Add this field to complete the relation with IsusuPurchase
+  purchases          IsusuPurchase[] // Add this field to complete the relation with IsusuPurchase
   price              Float?
   tier               String
-  admins          User[]    @relation("IsusuAdmins") // Many-to-many relation
+  admins             User[]                @relation("IsusuAdmins") // Many-to-many relation
+  dues               IsusuDues[] // Reverse relation for IsusuDues
+}
+
+model IsusuDues {
+  id          String   @id @default(uuid())
+  isusuId     String
+  userId      String
+  amount      Float
+  status      String   @default("pending") // pending, completed, failed
+  paymentDate DateTime @default(now())
+  isPaid      Boolean  @default(false)
+  dueDate     DateTime
+
+  isusu Isusu @relation(fields: [isusuId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
 }
 
 model IsusuPurchase {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  user      User     @relation("UserIsusuPurchases", fields: [userId], references: [id], onDelete: Cascade)
-  tier      String
-  amount    Decimal
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isusuId   String   // Make this non-nullable
-  isusu     Isusu    @relation(fields: [isusuId], references: [id]) // Make the relation non-nullable
-   paystackReference String
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  user              User     @relation("UserIsusuPurchases", fields: [userId], references: [id], onDelete: Cascade)
+  tier              String
+  amount            Decimal
+  status            String   @default("pending")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  isusuId           String // Make this non-nullable
+  isusu             Isusu    @relation(fields: [isusuId], references: [id]) // Make the relation non-nullable
+  paystackReference String
 }
-
-
-
 
 model IsusuMembers {
   id       String   @id @default(uuid())

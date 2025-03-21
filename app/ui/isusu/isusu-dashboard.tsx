@@ -9,6 +9,7 @@ import TransactionTimeline from "./transaction-timeline";
 import MembersList from "./members-list";
 import Posts from "./posts";
 import DuesHistory from "./dues-history";
+import Dues from "./dues";
 import CreatePost from "./create-post";
 import MakeDonation from "./make-donation";
 import tiers from "../../lib/utils";
@@ -25,6 +26,7 @@ const IsusuDashboard = () => {
   const [error, setError] = useState("");
   const [showDuesHistory, setShowDuesHistory] = useState(false);
   const [showMakeDonation, setShowMakeDonation] = useState(false);
+  const [showDues, setShowDues] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const userId = session?.user?.id?.toString() || "";
@@ -97,8 +99,8 @@ const IsusuDashboard = () => {
         <Button onClick={() => setShowMakeDonation(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg">
           🎁 Make a Donation
         </Button>
-        <Button onClick={() => setShowDuesHistory(true)} className="bg-gray-600 text-white px-4 py-2 rounded-lg">
-          📜 View Dues History
+        <Button onClick={() => setShowDues(true)} className="bg-gray-600 text-white px-4 py-2 rounded-lg">
+          📜 Dues
         </Button>
 
         {currentTier?.permissions?.loanAccess && (
@@ -133,6 +135,7 @@ const IsusuDashboard = () => {
 
       {showDuesHistory && <DuesHistory isusuId={isusuId} onClose={() => setShowDuesHistory(false)} />}
       {showMakeDonation && <MakeDonation isusuId={isusuId} onClose={() => setShowMakeDonation(false)} />}
+      {showDues && <Dues isusuId={isusuId} onClose={() => setShowDues(false)} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 bg-orange-100 p-4 rounded-lg">
         <div className="lg:col-span-4"><Leaderboard /></div>
