@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const DuesHistory = ({ isusuId }: { isusuId: string; }) => {
   const [dues, setDues] = useState<{ paymentDate: string; amount: number; status: string }[] | null>(null);
@@ -9,9 +7,8 @@ const DuesHistory = ({ isusuId }: { isusuId: string; }) => {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
-
-  // Fetch Dues History
-  const fetchDuesHistory = async () => {
+  // Memoized fetch function
+  const fetchDuesHistory = useCallback(async () => {
     if (!isusuId) {
       setError("Missing Isusu ID");
       setLoading(false);
@@ -26,7 +23,6 @@ const DuesHistory = ({ isusuId }: { isusuId: string; }) => {
       if (startDate && endDate) {
         url += `&startDate=${startDate}&endDate=${endDate}`;
       }
-
 
       console.log("Fetching Dues History from:", url);
 
@@ -45,12 +41,12 @@ const DuesHistory = ({ isusuId }: { isusuId: string; }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isusuId, startDate, endDate]); // Dependencies for useCallback
 
   // Fetch data on mount & when filters change
   useEffect(() => {
     fetchDuesHistory();
-  }, [isusuId, startDate, endDate]);
+  }, [fetchDuesHistory]); // Now fetchDuesHistory is included safely
 
   return (
     <div className="bg-black bg-opacity-50 flex justify-center items-center ">
