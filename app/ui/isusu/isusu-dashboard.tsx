@@ -17,19 +17,17 @@ import { useSession } from "next-auth/react";
 const IsusuDashboard = () => {
   const { id } = useParams();
   const isusuId = Array.isArray(id) ? id[0] : id ?? "";
-  const { data: session } = useSession(); // Get session from NextAuth
+  const { data: session } = useSession();
 
   const [isusuName, setIsusuName] = useState("");
-  const [isusuTier, setIsusuTier] = useState("");
+  const [isusuTier, setIsusuTier] = useState("Unknown Tier");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [showDuesHistory, setShowDuesHistory] = useState(false);
   const [showMakeDonation, setShowMakeDonation] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-
-
-  const userId = session?.user?.id;
+  const userId = session?.user?.id?.toString() || "";
 
   useEffect(() => {
     if (!isusuId) {
@@ -51,8 +49,7 @@ const IsusuDashboard = () => {
 
         const isusuData = await isusuRes.json();
         const walletData = await walletRes.json();
-        const userData = await userRes.json();
-
+        const userData = await userRes.json(); // This is now used below
 
         const isusu =
           isusuData.created?.find((group: { id: string }) => group.id === isusuId) ||
@@ -63,13 +60,12 @@ const IsusuDashboard = () => {
         setIsusuName(isusu.isusuName);
         setIsusuTier(isusu.tier || "Unknown Tier");
         setWalletBalance(walletData.balance ?? 0);
-
-        setIsAdmin(Array.isArray(isusu.admins) && isusu.admins.includes(userData.id));
-
+        setIsAdmin(Array.isArray(isusu.admins) && isusu.admins.includes(userData.id)); // Now userData is used
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred");
       }
     };
+
 
     fetchData();
   }, [isusuId, userId]);
@@ -77,19 +73,12 @@ const IsusuDashboard = () => {
   const formattedTier = `Tier ${isusuTier.replace(/\D/g, "")}`.trim();
   const currentTier = tiers?.find((tier) => tier.name === formattedTier);
 
-  if (!currentTier) {
-    console.warn("Warning: Tier not found for:", isusuTier);
-  }
-
-
   return (
     <div className="container mx-auto p-4 space-y-4 text-black-900 mt-4">
-      {/* Group Info */}
       <div className="flex flex-wrap justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-800">📊 {isusuName}</h2>
         <h2 className="text-3xl font-bold text-gray-800">{isusuTier}</h2>
 
-        {/* Wallet Balance Display */}
         <div className="bg-white p-4 rounded-lg shadow-md text-center">
           {(currentTier?.visibility?.walletBalance || isAdmin) && (
             <Link href={`/isusu/${isusuId}/loan-request`}>
@@ -101,16 +90,14 @@ const IsusuDashboard = () => {
           )}
         </div>
 
-
         {error && <p className="text-red-500 font-semibold">{error}</p>}
       </div>
 
-      {/* Action Buttons */}
       <div className="flex flex-wrap justify-center gap-4 bg-gray-100 p-4 rounded-lg">
-        <Button className="bg-green-600 text-white px-4 py-2 rounded-lg" onClick={() => setShowMakeDonation(true)}>
+        <Button onClick={() => setShowMakeDonation(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg">
           🎁 Make a Donation
         </Button>
-        <Button className="bg-gray-600 text-white px-4 py-2 rounded-lg" onClick={() => setShowDuesHistory(true)}>
+        <Button onClick={() => setShowDuesHistory(true)} className="bg-gray-600 text-white px-4 py-2 rounded-lg">
           📜 View Dues History
         </Button>
 
@@ -126,53 +113,37 @@ const IsusuDashboard = () => {
           </Link>
         )}
 
-        {/* Admin-Only Buttons */}
         {isAdmin && (
           <>
-              <Link href={`/isusu/${isusuId}/announcement`}>
-                <Button className="bg-yellow-600 text-white px-4 py-2 rounded-lg">📢 Make Announcement</Button>
-              </Link>
-
-              <Link href={`/isusu/${isusuId}/withdraw`}>
-                <Button className="bg-red-500 text-white px-4 py-2 rounded-lg">💰 Withdraw Funds</Button>
-              </Link>
-
-              <Link href={`/isusu/${isusuId}/edit`}>
-                <Button className="bg-blue-500 text-white px-4 py-2 rounded-lg">✏️ Edit Group Profile</Button>
-              </Link>
-
-            <Link href={`/dashboard/manage-members/${isusuId}`}>
-              <Button className="bg-indigo-500 text-white px-4 py-2 rounded-lg">
-                🛠️ Manage Members
-              </Button>
+            <Link href={`/isusu/${isusuId}/announcement`}>
+              <Button className="bg-yellow-600 text-white px-4 py-2 rounded-lg">📢 Make Announcement</Button>
             </Link>
-
-
+            <Link href={`/isusu/${isusuId}/withdraw`}>
+              <Button className="bg-red-500 text-white px-4 py-2 rounded-lg">💰 Withdraw Funds</Button>
+            </Link>
+            <Link href={`/isusu/${isusuId}/edit`}>
+              <Button className="bg-blue-500 text-white px-4 py-2 rounded-lg">✏️ Edit Group Profile</Button>
+            </Link>
+            <Link href={`/dashboard/manage-members/${isusuId}`}>
+              <Button className="bg-indigo-500 text-white px-4 py-2 rounded-lg">🛠️ Manage Members</Button>
+            </Link>
           </>
         )}
       </div>
 
-      {/* Popups */}
       {showDuesHistory && <DuesHistory isusuId={isusuId} onClose={() => setShowDuesHistory(false)} />}
       {showMakeDonation && <MakeDonation isusuId={isusuId} onClose={() => setShowMakeDonation(false)} />}
 
-      {/* Dashboard Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 bg-orange-100 p-4 rounded-lg">
-        <div className="lg:col-span-4">
-          <Leaderboard />
-        </div>
-        <div className="lg:col-span-1">
-          <MembersList isusuId={isusuId} />
-        </div>
+        <div className="lg:col-span-4"><Leaderboard /></div>
+        <div className="lg:col-span-1"><MembersList isusuId={isusuId} /></div>
         <div className="lg:col-span-3 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
               <CreatePost />
               <Posts isusuId={isusuId} />
             </div>
-            <div>
-              <TransactionTimeline />
-            </div>
+            <div><TransactionTimeline /></div>
           </div>
         </div>
       </div>
