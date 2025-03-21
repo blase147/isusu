@@ -126,48 +126,5 @@ export const deductionWorker = new Worker(
       console.error(`❌ Error processing deduction for user ${userId}:`, error);
     }
   },
-  { connection: redisClient }
-
-  async function processDuesPayments() {
-    const now = new Date();
-
-    const dueIsusus = await prisma.isusu.findMany({
-      where: { nextDueDate: { lte: now } }, // Fetch due Isusus
-      include: { members: { select: { userId: true, user: { select: { walletBalance: true } } } } },
-    });
-
-    for (const isusu of dueIsusus) {
-      for (const member of isusu.members) {
-        const amountDue = 1000; // Example fixed due amount
-
-        if (member.user.walletBalance >= amountDue) {
-          await prisma.$transaction([
-            prisma.user.update({
-              where: { id: member.userId },
-              data: { walletBalance: { decrement: amountDue } },
-            }),
-            prisma.isusu.update({
-              where: { id: isusu.id },
-              data: { walletBalance: { increment: amountDue } },
-            }),
-            prisma.isusuDues.create({
-              data: {
-                isusuId: isusu.id,
-                userId: member.userId,
-                amount: amountDue,
-                status: "completed",
-              },
-            }),
-          ]);
-        } else {
-          console.log(`User ${member.userId} has insufficient balance for Isusu ${isusu.id}`);
-        }
-      }
-    }
-
-    console.log("Automatic dues processed.");
-  }
-
-);
-
-console.log("🚀 Deduction worker started!");
+    { connection: redisClient }
+  );
