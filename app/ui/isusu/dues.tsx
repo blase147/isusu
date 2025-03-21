@@ -82,15 +82,7 @@ const PayDues = ({ isusuId, onClose }: PayDuesProps) => {
                 </button>
                 {message && <p className="mt-2 text-red-500">{message}</p>}
 
-                {/* <ul className="mt-2">
-                    {duesHistory.map((due) => (
-                        <li key={due.id} className="border p-2 my-1 rounded">
-                            {new Date(due.paymentDate).toLocaleDateString()} - ₦{due.amount} - {due.status}
-                        </li>
-                    ))}
-                </ul> */}
-
-                <DuesHistory isusuId={isusuId} onClose={onClose} />
+                <DuesHistory isusuId={isusuId}  />
             </div>
         </div>
     );

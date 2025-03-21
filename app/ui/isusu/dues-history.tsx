@@ -2,24 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-const DuesHistory = ({ isusuId, onClose }: { isusuId: string; onClose: () => void }) => {
+const DuesHistory = ({ isusuId }: { isusuId: string; }) => {
   const [dues, setDues] = useState<{ paymentDate: string; amount: number; status: string }[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
-  // Close on Escape Key
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
 
   // Fetch Dues History
   const fetchDuesHistory = async () => {
@@ -64,18 +53,8 @@ const DuesHistory = ({ isusuId, onClose }: { isusuId: string; onClose: () => voi
   }, [isusuId, startDate, endDate]);
 
   return (
-    <div className="bg-black bg-opacity-50 flex justify-center items-center fixed inset-0 z-50">
+    <div className="bg-black bg-opacity-50 flex justify-center items-center ">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl relative">
-        {/* Close Button */}
-        <button
-          type="button"
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          ✖
-        </button>
-
         <h3 className="text-lg font-bold mt-4 text-center">📜 Dues Payment History</h3>
 
         {/* Date Range Filter */}
