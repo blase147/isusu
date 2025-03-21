@@ -31,7 +31,7 @@ const EditProfile = () => {
     biography: "",
     bankAccount: "",
     occupation: "",
-    profilePicture: "/default-avatar.png",
+    profilePicture: "/avatar.png",
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 

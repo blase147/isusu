@@ -1,9 +1,10 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+module.exports = {
   images: {
-    domains: ["res.cloudinary.com"], // Allow Cloudinary images
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com", // Add your image host
+      },
+    ],
   },
 };
-
-export default nextConfig;

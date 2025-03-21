@@ -4,7 +4,7 @@ import {
   HomeIcon,
   CurrencyDollarIcon,
   UsersIcon,
-  PencilSquareIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -23,10 +23,15 @@ const links = [
     href: '/dashboard/manage-isusu',
     icon: UsersIcon, // 👥 Represents group savings
   },
+  // {
+  //   name: 'Edit Profile',
+  //   href: '/dashboard/user-profile/edit-profile',
+  //   icon: PencilSquareIcon, // ✏️ Represents profile editing
+  // },
   {
-    name: 'Edit Profile',
-    href: '/dashboard/user-profile/edit-profile',
-    icon: PencilSquareIcon, // ✏️ Represents profile editing
+    name: "Settings",
+    href: "/dashboard/settings",
+    icon: Cog6ToothIcon, // ⚙️ Represents settings
   },
 ];
 

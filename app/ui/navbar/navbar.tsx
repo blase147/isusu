@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { BellIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 import Notifications from "../notifications/notifications";
 import Image from "next/image";
+import { PowerIcon, EnvelopeIcon, UserIcon } from '@heroicons/react/24/outline';
+import { signOut } from './../../lib/auth';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,7 +35,7 @@ const Navbar = () => {
           ...data,
           profilePicture: data.profilePicture?.startsWith("http")
             ? data.profilePicture
-            : "/default-avatar.png", // Ensure default is used only if null/empty
+            : "/avatar.png", // Ensure default is used only if null/empty
         });
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -108,47 +110,46 @@ const Navbar = () => {
           <button
             title="User Menu"
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2 text-gray-700 hover:text-gray-900 focus:outline-none"
+            className="flex items-center gap-2 text-gray-700 hover:text-gray-900 focus:outline-none rounded-full"
           >
             {user?.profilePicture ? (
               <Image
                 src={user.profilePicture}
                 alt="User"
-                width={32}
-                height={32}
-                className="rounded-full object-cover"
+                width={40}
+                height={50}
+                className="rounded-full object-cover "
                 unoptimized={user.profilePicture.includes("cloudinary")}
               />
             ) : (
               <Image
-                src="/default-avatar.png"
+                src="/avatar.png"
                 alt="Default Avatar"
                 width={32}
                 height={32}
                 className="rounded-full object-cover"
               />
             )}
-
-
           </button>
 
           {isOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 border">
-              <div className="px-4 py-2 text-gray-700 font-semibold border-b">
-                {user ? user.name : "Loading..."}
+              <div className="px-4 py-2 text-gray-700 font-semibold border-b flex items-center gap-2">
+                <span>{user ? user.name : "Loading..."}</span>
               </div>
-              <div className="px-4 py-2 text-gray-700 text-sm font-semibold border-b">
-                {user ? user.email : "Loading..."}
+              <div className="px-4 py-2 text-gray-700 text-sm font-semibold border-b flex items-center gap-2">
+                <EnvelopeIcon className="w-5 h-5 shrink-0" />
+                <span className="truncate">{user ? user.email : "Loading..."}</span>
               </div>
-              <a href="/dashboard/user-profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                Profile
+              <a href="/dashboard/user-profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                <UserIcon className="w-5 h-5" /> Profile
               </a>
-              <a href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                Settings
-              </a>
-              <a href="#" className="block px-4 py-2 text-red-600 hover:bg-gray-100">
-                Logout
-              </a>
+              <form action={signOut}>
+                <button type="submit" className="flex h-[48px] w-full grow items-center justify-left gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3">
+                  <PowerIcon className="w-6" />
+                  <div className="hidden md:block">Sign Out</div>
+                </button>
+              </form>
             </div>
           )}
         </div>
