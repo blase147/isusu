@@ -7,23 +7,21 @@ const prisma = new PrismaClient();
 // 📌 GET /api/notifications - Fetch notifications for the authenticated user
 export async function GET() {
   try {
-    // Authenticate user
     const session = await auth();
-
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id; // Get user ID from the authenticated session
-    console.log("Fetching notifications for authenticated userId:", userId);
+    // Ensure userId is correctly retrieved and converted to string
+    const userId = String(session.user.id);
+
+    console.log(`Fetching notifications for userId: ${userId}`);
 
     const notifications = await prisma.notification.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
       include: { user: true, isusu: true },
     });
-
-    console.log("Fetched notifications:", notifications); // Debugging log
 
     return NextResponse.json(notifications);
   } catch (error) {

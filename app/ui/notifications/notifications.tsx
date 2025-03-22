@@ -12,56 +12,66 @@ interface Notification {
 }
 
 export default function Notifications() {
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const userId = "some-user-id"; // 🔹 Replace with actual user ID (from auth state)
-
   useEffect(() => {
-    if (!userId) return; // Ensure userId exists before fetching
-
     const fetchNotifications = async () => {
-      setLoading(true);
       try {
-        const res = await fetch(`/api/notifications?userId=${userId}`);
-        if (!res.ok) throw new Error("Failed to fetch notifications");
-        const data = await res.json();
-        setNotifications(data);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        const response = await fetch("/api/notifications");
+        const data = await response.json();
+
+        if (response.ok) {
+          setNotifications(data);
+        } else {
+          setError(data.error || "Failed to load notifications.");
+        }
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          setError(error.message || "Network error. Please try again.");
+        } else {
+          setError("An unknown error occurred.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchNotifications(); // Initial fetch
-
-    const interval = setInterval(fetchNotifications, 60000); // ✅ Fetch every 60 seconds
-    return () => clearInterval(interval); // ✅ Cleanup on unmount
-
-  }, [userId]); // ✅ Dependency array only includes userId
+    fetchNotifications();
+  }, []);
 
   return (
-    <div className="max-w-lg mx-auto p-4 bg-white shadow-lg rounded-lg">
-      <h2 className="text-xl font-bold mb-4">🔔 Notifications</h2>
+    <div className="max-w-2xl mx-auto mt-6 p-6 bg-white shadow-lg rounded-lg">
+      <h2 className="text-xl font-semibold mb-4 text-gray-700">Notifications</h2>
 
-      {error && <p className="text-red-500">{error}</p>}
-      {loading && <p>Loading...</p>}
+      {loading && (
+        <p className="text-gray-500 animate-pulse">Loading notifications...</p>
+      )}
 
-      {notifications.length === 0 ? (
-        <p>No notifications yet.</p>
-      ) : (
-        <ul className="space-y-2">
-          {notifications.map((notif) => (
-            <li key={notif.id} className="p-2 border rounded bg-gray-100">
-              <span className="text-sm">{notif.message}</span>
-              <span className="text-xs text-gray-500 ml-2">
-                ({new Date(notif.createdAt).toLocaleTimeString()})
-              </span>
-            </li>
+      {error && (
+        <p className="text-red-500 bg-red-100 p-2 rounded-md">{error}</p>
+      )}
+
+      {notifications.length > 0 ? (
+        <div className="space-y-4">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className="p-4 border rounded-md bg-gray-50 hover:bg-gray-100 transition"
+            >
+              <p className="text-gray-800">{notification.message}</p>
+              <small className="text-gray-500">
+                {new Date(notification.createdAt).toLocaleString()}
+              </small>
+            </div>
           ))}
-        </ul>
+        </div>
+      ) : (
+        !loading && (
+          <p className="text-gray-500 italic">No notifications yet.</p>
+        )
       )}
     </div>
   );

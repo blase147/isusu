@@ -1,38 +1,51 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SendMoney() {
   const router = useRouter();
 
-  const [recipientType, setRecipientType] = useState<"user" | "group">("user");
   const [recipientEmail, setRecipientEmail] = useState("");
-  const [selectedGroup, setSelectedGroup] = useState("");
-  const [groups, setGroups] = useState<{ id: string; isusuName: string }[]>([]);
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientName, setRecipientName] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchGroups = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/isusu/fetch`);
-        if (!response.ok) throw new Error("Failed to fetch groups");
+  // ✅ Fetch recipient details
+  const handleFetchRecipient = async () => {
+    if (!recipientEmail.trim()) {
+      setError("Please enter the recipient's email.");
+      return;
+    }
 
-        const data = await response.json();
-        setGroups([...data.created, ...data.joined]);
-      } catch {
-        setError("Failed to load groups.");
-      } finally {
-        setLoading(false);
+    setError(null);
+    setRecipientName(null);
+    setRecipientPhone(""); // Clear previous phone state
+    setVerifying(true);
+
+    try {
+      const response = await fetch(`/api/user?email=${recipientEmail}`);
+
+      if (!response.ok) {
+        throw new Error("Recipient not found.");
       }
-    };
 
-    fetchGroups();
-  }, []);
+      const data = await response.json();
+      setRecipientName(data.name || "Unknown Recipient");
+      setRecipientPhone(data.phone || ""); // ✅ Correctly set phone number
 
+    } catch {
+      setError("Failed to fetch recipient details.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+
+  // ✅ Handle money transfer
   const handleSendMoney = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -42,48 +55,39 @@ export default function SendMoney() {
       return;
     }
 
-    if (recipientType === "user" && !recipientEmail.trim()) {
-      alert("Please enter the recipient's email.");
-      return;
-    }
-
-    if (recipientType === "group" && !selectedGroup) {
-      alert("Please select a group.");
+    if (!recipientEmail.trim() || !recipientPhone.trim()) {
+      alert("Please enter both email and phone number.");
       return;
     }
 
     setLoading(true);
-
-    const payload: { amount: number; recipientEmail?: string; groupId?: string } = { amount: +amount };
-
-    if (recipientType === "user") {
-      payload.recipientEmail = recipientEmail;
-    } else {
-      payload.groupId = selectedGroup;
-    }
 
     try {
       const response = await fetch("/api/wallet/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          amount: +amount,
+          recipientEmail,
+          recipientPhone,
+        }),
       });
 
       const result = await response.json();
 
-      if (response.ok) {
-        alert(
-          `₦${amount} successfully sent to ${
-            recipientType === "user" ? recipientEmail : `group ${selectedGroup}`
-          }`
-        );
-        router.push("/dashboard/transactions");
-      } else {
-        setError(result.message || "Transaction failed.");
+      if (!response.ok) {
+        throw new Error(result.message || "Transaction failed.");
       }
-    } catch {
-      setError("An error occurred. Please try again.");
+
+      alert(`₦${amount} successfully sent to ${recipientName || recipientEmail}`);
+      router.push("/dashboard/transactions");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message || "An error occurred. Please try again.");
+      } else {
+        setError("An error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -93,61 +97,48 @@ export default function SendMoney() {
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
       <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
         {error && <p className="text-red-500 text-center">{error}</p>}
+
         <form onSubmit={handleSendMoney} className="space-y-4">
+          {/* Recipient Email */}
           <div>
-            <label htmlFor="recipientType" className="block text-gray-700">
-              Send To
-            </label>
-            <select
-              id="recipientType"
-              title="Recipient Type"
-              value={recipientType}
-              onChange={(e) => setRecipientType(e.target.value as "user" | "group")}
+            <label className="block text-gray-700">Recipient Email</label>
+            <input
+              type="email"
+              value={recipientEmail}
+              onChange={(e) => setRecipientEmail(e.target.value)}
+              placeholder="Enter recipient email"
               className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300"
+              required
+            />
+            <button
+              type="button"
+              onClick={handleFetchRecipient}
+              className="mt-2 bg-blue-500 text-white py-1 px-4 rounded-md hover:bg-blue-600"
+              disabled={verifying}
             >
-              <option value="user">User (via Email)</option>
-              <option value="group">Group (Isusu)</option>
-            </select>
+              {verifying ? "Verifying..." : "Verify Email"}
+            </button>
           </div>
 
-          {recipientType === "user" && (
-            <div>
-              <label className="block text-gray-700">Recipient Email</label>
-              <input
-                type="email"
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-                placeholder="Enter recipient email"
-                className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300"
-                required
-              />
-            </div>
+          {/* Display Recipient Name */}
+          {recipientName && (
+            <p className="text-green-600">Recipient: {recipientName}</p>
           )}
 
-          {recipientType === "group" && (
-            <div>
-              <label className="block text-gray-700">Select Group</label>
-              <select
-                title="Select Group"
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300"
-                required
-              >
-                <option value="">-- Select Group --</option>
-                {groups.length > 0 ? (
-                  groups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.isusuName}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No groups available</option>
-                )}
-              </select>
-            </div>
-          )}
+          {/* Recipient Phone */}
+          <div>
+            <label className="block text-gray-700">Confirm Phone Number</label>
+            <input
+              type="tel"
+              value={recipientPhone}
+              onChange={(e) => setRecipientPhone(e.target.value)}
+              placeholder="Enter recipient phone number"
+              className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300"
+              required
+            />
+          </div>
 
+          {/* Amount */}
           <div>
             <label className="block text-gray-700">Amount (₦)</label>
             <input
@@ -160,9 +151,10 @@ export default function SendMoney() {
             />
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !recipientName}
             className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
           >
             {loading ? "Sending..." : "Send Money"}

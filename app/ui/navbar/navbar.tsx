@@ -85,6 +85,8 @@ const Navbar = () => {
       <div className="flex items-center gap-4">
         <div className="relative" ref={notifRef}>
           <button
+            type="button"
+            title="Notifications"
             onClick={() => setIsNotifOpen(!isNotifOpen)}
             className="relative text-gray-600 hover:text-gray-900 focus:outline-none"
           >
@@ -102,12 +104,16 @@ const Navbar = () => {
           )}
         </div>
 
-        <button title="Messages" className="text-gray-600 hover:text-gray-900 focus:outline-none">
+        <button
+          type="button"
+          title="Messages"
+          className="text-gray-600 hover:text-gray-900 focus:outline-none">
           <ChatBubbleLeftIcon className="h-6 w-6" />
         </button>
 
         <div className="relative" ref={userRef}>
           <button
+            type="button"
             title="User Menu"
             onClick={() => setIsOpen(!isOpen)}
             className="flex items-center gap-2 text-gray-700 hover:text-gray-900 focus:outline-none rounded-full"
@@ -116,9 +122,9 @@ const Navbar = () => {
               <Image
                 src={user.profilePicture}
                 alt="User"
-                width={40}
-                height={50}
-                className="rounded-full object-cover "
+                width={32}
+                height={32}
+                className="w-8 h-8 object-cover rounded-full" // ✅ Fix size
                 unoptimized={user.profilePicture.includes("cloudinary")}
               />
             ) : (
@@ -127,9 +133,10 @@ const Navbar = () => {
                 alt="Default Avatar"
                 width={32}
                 height={32}
-                className="rounded-full object-cover"
+                className="w-8 h-8 object-cover rounded-full" // ✅ Fix size
               />
             )}
+
           </button>
 
           {isOpen && (

@@ -11,8 +11,8 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ✅ GET user data
-export async function GET() {
+// ✅ GET: Retrieve User Profile
+export async function GET(req: Request) {
     try {
         // Authenticate user
         const session = await auth();
@@ -20,9 +20,12 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const url = new URL(req.url);
+        const email = url.searchParams.get("email") || session.user.email; // Use session email if no query param
+
         // Fetch user details
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
+            where: { email },
             select: {
                 id: true,
                 name: true,
@@ -48,7 +51,7 @@ export async function GET() {
     }
 }
 
-// ✅ PUT request to update user details
+// ✅ PUT: Update User Profile
 export async function PUT(req: Request) {
     try {
         // Authenticate user

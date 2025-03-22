@@ -137,21 +137,25 @@ export async function POST(req: Request) {
           description: `Money transfer to ${recipient.email}`,
         },
       }),
-      prisma.notification.createMany({
-        data: [
-          {
-            userId: sender.id,
-            type: "TRANSFER",
-            message: `You sent ₦${amount} to ${recipient.email}.`,
-          },
-          {
-            userId: recipient.id,
-            type: "TRANSFER",
-            message: `You received ₦${amount} from ${sender.email}.`,
-          },
-        ],
-      }),
     ]);
+
+    // Separate Notifications (Outside Transaction)
+    await prisma.notification.create({
+      data: {
+        userId: sender.id,
+        type: "TRANSFER",
+        message: `You sent ₦${amount} to ${recipient.email}.`,
+      },
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: recipient.id,
+        type: "TRANSFER",
+        message: `You received ₦${amount} from ${sender.email}.`,
+      },
+    });
+
 
     return NextResponse.json({ success: true, message: "Transfer successful" }, { status: 200 });
   } catch (error) {
