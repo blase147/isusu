@@ -1,13 +1,14 @@
 import { NextAuthConfig, Session } from "next-auth";
+import { JWT } from "next-auth/jwt";
 
 declare module "next-auth" {
   interface User {
-    id?: string; // ✅ Ensure User includes an ID
+    id?: string;
     accessToken?: string;
   }
 
   interface Session {
-    user: User; // ✅ Ensure Session includes User
+    user: User;
   }
 }
 
@@ -16,25 +17,25 @@ export const authConfig: NextAuthConfig = {
     signIn: "/login",
   },
   callbacks: {
-    async session({ session, token }) {
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.sub = user.id || token.sub; // ✅ Ensure ID is stored
+        token.accessToken = account?.access_token || user.accessToken || undefined;
+      }
+      return token;
+    },
+
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
-        session.user.id = token.sub as string; // ✅ Ensure ID is stored
+        session.user.id = token.sub as string;
         session.user.accessToken = token.accessToken as string | undefined;
       }
       return session;
     },
 
-    async jwt({ token, user }) {
-      if (user) {
-        token.sub = user.id; // ✅ Store ID in JWT
-        token.accessToken = user.accessToken || undefined;
-      }
-      return token;
-    },
-
     async authorized({ auth }: { auth: Session | null }) {
-      return !!auth?.user; // ✅ Only allow authenticated users
+      return !!auth?.user;
     },
   },
-  providers: [],
+  providers: [], // ✅ Add providers here
 };
