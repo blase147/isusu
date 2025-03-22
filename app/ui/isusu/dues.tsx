@@ -80,7 +80,7 @@ const PayDues = ({ isusuId, onClose }: PayDuesProps) => {
                 >
                     {loading ? "Processing..." : "Pay Dues"}
                 </button>
-                {message && <p className="mt-2 text-red-500">{message}</p>}
+                {message && <p className="mt-2 text-green-500">{message}</p>}
 
                 <DuesHistory isusuId={isusuId}  />
             </div>

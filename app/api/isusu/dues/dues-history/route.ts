@@ -1,26 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-
-interface GetRequest {
-    url: string;
-}
-
-interface DuesHistoryQueryParams {
-    isusuId: string;
-    startDate?: string;
-    endDate?: string;
-}
-
-interface DuesHistory {
-    paymentDate: Date;
-    amount: number;
-    status: string;
-}
-
-export async function GET(req: GetRequest): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
     try {
         const { searchParams } = new URL(req.url);
         const isusuId = searchParams.get("isusuId");
@@ -32,7 +15,13 @@ export async function GET(req: GetRequest): Promise<NextResponse> {
         }
 
         // Construct query filters
-        const whereClause: DuesHistoryQueryParams = {
+        const whereClause: {
+            isusuId: string;
+            paymentDate?: {
+                gte: Date;
+                lte: Date;
+            };
+        } = {
             isusuId,
             ...(startDate && endDate
                 ? { paymentDate: { gte: new Date(startDate), lte: new Date(endDate) } }
@@ -40,7 +29,7 @@ export async function GET(req: GetRequest): Promise<NextResponse> {
         };
 
         // Fetch data from Prisma
-        const dues: DuesHistory[] = await prisma.isusuDues.findMany({
+        const dues = await prisma.isusuDues.findMany({
             where: whereClause,
             select: {
                 paymentDate: true,
