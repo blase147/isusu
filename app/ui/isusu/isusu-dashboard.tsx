@@ -24,7 +24,7 @@ const IsusuDashboard = () => {
   const [isusuTier, setIsusuTier] = useState("Unknown Tier");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [showDuesHistory, setShowDuesHistory] = useState(false);
+  const [showDuesHistory] = useState(false);
   const [showMakeDonation, setShowMakeDonation] = useState(false);
   const [showDues, setShowDues] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -133,7 +133,7 @@ const IsusuDashboard = () => {
         )}
       </div>
 
-      {showDuesHistory && <DuesHistory isusuId={isusuId} onClose={() => setShowDuesHistory(false)} />}
+      {showDuesHistory && <DuesHistory isusuId={isusuId} />}
       {showMakeDonation && <MakeDonation isusuId={isusuId} onClose={() => setShowMakeDonation(false)} />}
       {showDues && <Dues isusuId={isusuId} onClose={() => setShowDues(false)} />}
 
