@@ -74,6 +74,7 @@ const PayDues = ({ isusuId, onClose }: PayDuesProps) => {
                     className="border p-2 rounded w-full mb-2"
                 />
                 <button
+                    type="button"
                     onClick={handlePayDues}
                     disabled={loading}
                     className="bg-blue-500 text-white p-2 rounded w-full"

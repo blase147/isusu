@@ -4,7 +4,6 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "../button";
 import Link from "next/link";
-import Leaderboard from "./leaderboard";
 import TransactionTimeline from "./transaction-timeline";
 import MembersList from "./members-list";
 import Posts from "./posts";
@@ -14,6 +13,8 @@ import CreatePost from "./create-post";
 import MakeDonation from "./make-donation";
 import tiers from "../../lib/utils";
 import { useSession } from "next-auth/react";
+import AnnouncementsList from "./fetch-announcements";
+import AnnouncementForm from "./announcements";
 
 const IsusuDashboard = () => {
   const { id } = useParams();
@@ -28,6 +29,8 @@ const IsusuDashboard = () => {
   const [showMakeDonation, setShowMakeDonation] = useState(false);
   const [showDues, setShowDues] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showAnnouncements] = useState(false);
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
 
   const userId = session?.user?.id?.toString() || "";
 
@@ -117,9 +120,9 @@ const IsusuDashboard = () => {
 
         {isAdmin && (
           <>
-            <Link href={`/isusu/${isusuId}/announcement`}>
-              <Button className="bg-yellow-600 text-white px-4 py-2 rounded-lg">📢 Make Announcement</Button>
-            </Link>
+              <Button onClick={() => setShowAnnouncementForm(true)} className="bg-gray-600 text-white px-4 py-2 rounded-lg">
+                📢 Make Announcement
+              </Button>
             <Link href={`/isusu/${isusuId}/withdraw`}>
               <Button className="bg-red-500 text-white px-4 py-2 rounded-lg">💰 Withdraw Funds</Button>
             </Link>
@@ -136,9 +139,13 @@ const IsusuDashboard = () => {
       {showDuesHistory && <DuesHistory isusuId={isusuId} />}
       {showMakeDonation && <MakeDonation isusuId={isusuId} onClose={() => setShowMakeDonation(false)} />}
       {showDues && <Dues isusuId={isusuId} onClose={() => setShowDues(false)} />}
+      {showAnnouncements && <AnnouncementsList isusuId={isusuId} />}
+      {showAnnouncementForm && <AnnouncementsList isusuId={isusuId} />}
+      {showAnnouncementForm && <AnnouncementForm isusuId={isusuId} onClose={() => setShowAnnouncementForm(false)} />}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 bg-orange-100 p-4 rounded-lg">
-        <div className="lg:col-span-4"><Leaderboard /></div>
+        <div className="lg:col-span-4"><AnnouncementsList isusuId={isusuId} /></div>
         <div className="lg:col-span-1"><MembersList isusuId={isusuId} /></div>
         <div className="lg:col-span-3 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

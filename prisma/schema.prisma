@@ -116,6 +116,7 @@ model Isusu {
   tier               String
   admins             User[]                @relation("IsusuAdmins") // Many-to-many relation
   dues               IsusuDues[] // Reverse relation for IsusuDues
+  announcements Announcement[] // Relationship
 }
 
 model IsusuDues {
@@ -153,6 +154,15 @@ model IsusuMembers {
   userId   String
   isusu    Isusu    @relation(fields: [isusuId], references: [id])
   user     User     @relation(fields: [userId], references: [id])
+}
+
+model Announcement {
+  id        String   @id @default(uuid()) // Unique identifier
+  title     String   // Announcement title
+  message   String   // Announcement message
+  createdAt DateTime @default(now()) // Timestamp
+  isusuId   String   // Foreign key to Group
+  isusu     Isusu    @relation(fields: [isusuId], references: [id], onDelete: Cascade)
 }
 
 model Post {
