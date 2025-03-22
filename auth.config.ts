@@ -1,14 +1,9 @@
-import { NextAuthConfig, Session } from "next-auth";
-import { JWT } from "next-auth/jwt";
+// auth.config.ts
+import { NextAuthConfig, User } from "next-auth";
 
 declare module "next-auth" {
   interface User {
-    id?: string;
     accessToken?: string;
-  }
-
-  interface Session {
-    user: User;
   }
 }
 
@@ -17,25 +12,26 @@ export const authConfig: NextAuthConfig = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.sub = user.id || token.sub; // ✅ Ensure ID is stored
-        token.accessToken = account?.access_token || user.accessToken || undefined;
-      }
-      return token;
-    },
-
-    async session({ session, token }: { session: Session; token: JWT }) {
-      if (session.user) {
-        session.user.id = token.sub as string;
-        session.user.accessToken = token.accessToken as string | undefined;
+    async session({ session, user }) {
+      if (session.user && user) {
+        session.user.id = user.id;
+        if ("accessToken" in user) {
+          session.user.accessToken = (user as User).accessToken;
+        }
       }
       return session;
     },
 
-    async authorized({ auth }: { auth: Session | null }) {
-      return !!auth?.user;
+    async authorized({ auth, request }) {
+      const isLoggedIn = !!auth?.user;
+      const nextUrl = new URL(request.url);
+      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
+      const isOnLandingPage = nextUrl.pathname === "/";
+
+      if (isOnDashboard) return isLoggedIn;
+      if (isOnLandingPage) return true;
+      return isLoggedIn ? Response.redirect(new URL("/dashboard", nextUrl)) : true;
     },
   },
-  providers: [], // ✅ Add providers here
+  providers: [],
 };
