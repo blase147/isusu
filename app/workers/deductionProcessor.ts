@@ -60,6 +60,17 @@ export async function processDeductions(groupId: string) {
               description: `Scheduled deduction for Isusu group ${group.id}`,
             },
           }),
+          prisma.isusuDues.create({
+            data: {
+              isusuId: group.id,
+              userId: member.user.id,
+              amount: amountToDeduct,
+              status: "completed",
+              paymentDate: new Date(),
+              isPaid: true,
+              dueDate: new Date(), // Set this appropriately if there's a due date system
+            },
+          }),
         ]);
         console.log(`✅ Deducted ${amountToDeduct} from ${member.user.id}`);
       } catch (error) {
@@ -120,11 +131,22 @@ export const deductionWorker = new Worker(
             description: `Automatic deduction for Isusu group ${isusu.id}`,
           },
         }),
+        prisma.isusuDues.create({
+          data: {
+            isusuId,
+            userId,
+            amount,
+            status: "completed",
+            paymentDate: new Date(),
+            isPaid: true,
+            dueDate: new Date(), // Set correctly based on due cycle
+          },
+        }),
       ]);
       console.log(`✅ Deduction successful for user ${userId}`);
     } catch (error) {
       console.error(`❌ Error processing deduction for user ${userId}:`, error);
     }
   },
-    { connection: redisClient }
-  );
+  { connection: redisClient }
+);
