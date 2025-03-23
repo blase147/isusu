@@ -29,12 +29,13 @@ async function restoreScheduledJobs() {
 restoreScheduledJobs(); // Run on startup
 
 const frequencyMap: Record<string, string> = {
-  daily: "0 0 * * *",
-  weekly: "0 0 * * 0",
-  biweekly: "0 0 1,15 * *",
-  monthly: "0 0 1 * *",
-  quarterly: "0 0 1 */3 *",
-  annually: "0 0 1 1 *",
+  daily: "0 0 * * *",           // Every day at midnight
+  weekly: "0 0 * * 0",          // Every Sunday at midnight
+  biweekly: "0 0 1,15 * *",     // Every 1st and 15th of the month at midnight
+  monthly: "0 0 1 * *",         // Every 1st of the month at midnight
+  third_quarterly: "0 0 1 */3 *", // Every 1st of every 3rd month at midnight
+  semi_annually: "0 0 1 */6 *",  // Every 1st of every 6th month at midnight
+  annually: "0 0 1 1 *",        // Every January 1st at midnight
 };
 
 export async function POST(req: Request) {

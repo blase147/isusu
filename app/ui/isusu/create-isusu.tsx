@@ -223,7 +223,7 @@ const createIsusuGroup = async () => {
       { label: "Uwamgbede", value: "Uwamgbede", frequencies: ["Daily", "Weekly", "Biweekly"] },
       { label: "Payday Flex", value: "Payday Flex", frequencies: ["Daily", "Weekly", "Biweekly", "Monthly"] },
       { label: "Chief Merchants", value: "Chief Merchants", frequencies: ["Daily", "Weekly", "Biweekly", "Monthly", "Third Quarterly"] },
-      { label: "Mid Year Takers", value: "Mid Year Takers", frequencies: ["Daily", "Weekly", "Biweekly", "Monthly", "Third Quarterly","Semi-Annually"] },
+      { label: "Doublers Arena", value: "Mid Year Takers", frequencies: ["Daily", "Weekly", "Biweekly", "Monthly", "Third Quarterly", "Semi-Annually"] },
       { label: "Party Mongers", value: "Party Mongers", frequencies: ["Daily", "Weekly", "Biweekly", "Monthly", "Third Quarterly", "Semi-Annually", "Annually"] },
     ];
 
