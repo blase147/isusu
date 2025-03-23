@@ -1,22 +1,13 @@
-import { NextResponse } from 'next/server';
-import { processDeductions } from '@/./app/workers/deductionProcessor'; // Ensure this path is correct
+import { NextResponse, NextRequest } from 'next/server';
+import { processDeductions } from '@/app/workers/deductionProcessor'; // Ensure this path is correct
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-interface Request {
-    headers: {
-        get: (name: string) => string | null;
-    };
-}
-
-interface IsusuGroup {
-    id: string;
-}
-
-export async function GET(req: Request): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
     // Check authorization using CRON_SECRET
-    if (req.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -24,7 +15,7 @@ export async function GET(req: Request): Promise<NextResponse> {
         console.log("🔄 Running scheduled deductions...");
 
         // Fetch all active Isusu groups
-        const isusuGroups: IsusuGroup[] = await prisma.isusu.findMany();
+        const isusuGroups = await prisma.isusu.findMany();
 
         for (const group of isusuGroups) {
             await processDeductions(group.id);
