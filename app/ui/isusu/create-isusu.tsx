@@ -216,6 +216,22 @@ const createIsusuGroup = async () => {
   const isAmountValid = Number(amount) > 0;
   const isPublicKeyLoaded = publicKey !== "";
 
+
+    // Mapping `isusuClass` names to values and corresponding frequency options
+    const isusuClasses = [
+      { label: "Weekend Oringo", value: "Weekend Oringo", frequencies: ["Daily", "Weekly"] },
+      { label: "Uwamgbede", value: "Uwamgbede", frequencies: ["Daily", "Weekly", "Biweekly"] },
+      { label: "Payday Flex", value: "Payday Flex", frequencies: ["Daily", "Weekly", "Biweekly", "Monthly"] },
+      { label: "Chief Merchants", value: "Chief Merchants", frequencies: ["Daily", "Weekly", "Biweekly", "Monthly", "Third Quarterly"] },
+      { label: "Mid Year Takers", value: "Mid Year Takers", frequencies: ["Daily", "Weekly", "Biweekly", "Monthly", "Third Quarterly","Semi-Annually"] },
+      { label: "Party Mongers", value: "Party Mongers", frequencies: ["Daily", "Weekly", "Biweekly", "Monthly", "Third Quarterly", "Semi-Annually", "Annually"] },
+    ];
+
+  const handleIsusuClassChange = (value: string) => {
+    setIsusuClass(value);
+    setFrequency(""); // Reset frequency when class changes
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <Link href="/dashboard/manage-isusu" className="flex items-center justify-center mb-4">
@@ -244,41 +260,21 @@ const createIsusuGroup = async () => {
 
           <div>
             <label htmlFor="isusuClass" className="block font-semibold">Class of Isusu</label>
-            <select
-              id="isusuClass"
-              className="w-full border p-2 rounded-md mt-1"
-              value={isusuClass}
-              onChange={(e) => setIsusuClass(e.target.value)}
-              required
-            >
-              <option value="">Select Isusu Class</option>
-              <option value="Weekend_Oringo">Weekend Oringo</option>
-              <option value="Uwamgbede">Uwamgbede</option>
-              <option value="PayDay_Flex">PayDay Flex</option>
-              <option value="Club_Merchants">Club Merchants</option>
-              <option value="Doublers_Arena">Doubler&apos;s Arena</option>
-              <option value="Party_Mongers">Party Mongers</option>
-              <option value="Grocery_Merchants">Grocery Merchants</option>
-              <option value="Chosen_takes_it_all">Chosen takes it all</option>
+            <select id="isusuClass" className="w-full border p-2 rounded-md mt-1" value={isusuClass} onChange={(e) => handleIsusuClassChange(e.target.value)} required>
+              <option value="" disabled>Select an Isusu Class</option>
+              {isusuClasses.map(({ label, value }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
           </div>
 
           <div>
-            <label htmlFor="frequency" className="block font-semibold">Frequency</label>
-            <select
-              id="frequency"
-              className="w-full border p-2 rounded-md mt-1"
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
-              required
-            >
-              <option value="">Select frequency</option>
-              <option value="Daily">Daily</option>
-              <option value="Weekly">Weekly</option>
-              <option value="Bi-weekly">Bi-weekly</option>
-              <option value="Monthly">Monthly</option>
-              <option value="Quarterly">Quarterly</option>
-              <option value="Annually">Annually</option>
+            <label htmlFor="frequency" className="block font-semibold">Milestone</label>
+            <select id="frequency" className="w-full border p-2 rounded-md mt-1" value={frequency} onChange={(e) => setFrequency(e.target.value)} required disabled={!isusuClass}>
+              <option value="" disabled>Select Milestone</option>
+              {isusuClasses.find(({ value }) => value === isusuClass)?.frequencies.map((freq) => (
+                <option key={freq} value={freq}>{freq}</option>
+              ))}
             </select>
           </div>
 

@@ -1,4 +1,4 @@
-import { NextAuthConfig, Session, User } from "next-auth";
+import { NextAuthConfig, Session } from "next-auth";
 
 declare module "next-auth" {
   interface User {
@@ -33,10 +33,12 @@ export const authConfig: NextAuthConfig = {
       const nextUrl = new URL(request.url);
       const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
       const isOnLandingPage = nextUrl.pathname === "/";
+      const isOnAboutPage = nextUrl.pathname === "/about-us"; // ✅ Allow access to About Us
+      const isOnPrivacyPage = nextUrl.pathname === "/privacy-policy"; // ✅ Allow access to About Us
 
       if (isOnDashboard) {
         return isLoggedIn; // ✅ Allow only logged-in users
-      } else if (isOnLandingPage) {
+      } else if (isOnLandingPage || isOnAboutPage || isOnPrivacyPage) {
         return true; // ✅ Allow everyone
       } else if (isLoggedIn) {
         return Response.redirect(new URL("/dashboard", nextUrl)); // ✅ Redirect logged-in users
