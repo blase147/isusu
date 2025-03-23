@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  name           String?
+  password       String
+  profilePicture String? // Field for profile picture URL
+  phone          String? // Field for phone number
+  dateOfBirth    DateTime? // Field for date of birth
+  address        String? // New field for address
+  biography      String? // New field for biography
+  bankAccount    String? // New field for bank account
+  occupation     String? // New field for occupation
+
+  createdIsusus        Isusu[]               @relation("CreatedIsusus")
+  isusuMemberships     IsusuMembers[]
+  receivedTransactions Transaction[]         @relation("ReceivedTransactions")
+  sentTransactions     Transaction[]         @relation("SentTransactions")
+  walletId             String?               @unique
+  wallet               Wallet?               @relation("UserWallet", fields: [walletId], references: [id])
+  timelines            TransactionTimeline[] @relation("UserTimelines")
+  posts                Post[]
+  notifications        Notification[]        @relation("UserNotifications")
+  isusuPurchases       IsusuPurchase[]       @relation("UserIsusuPurchases")
+  isususAdminFor       Isusu[]               @relation("IsusuAdmins")
+  dues                 IsusuDues[]
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  balance   Float    @default(0.00)
+  createdAt DateTime @default(now())
+  user      User?    @relation("UserWallet")
+  isusu     Isusu?   @relation("IsusuWallet")
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  amount      Float
+  type        String
+  status      String
+  createdAt   DateTime @default(now())
+  recipientId String?
+  senderId    String
+  reference   String   @unique
+  description String?
+  isIsusu     Boolean  @default(false)
+  isusuId     String?
+
+  recipient User?  @relation("ReceivedTransactions", fields: [recipientId], references: [id])
+  sender    User   @relation("SentTransactions", fields: [senderId], references: [id])
+  isusu     Isusu? @relation("IsusuTransactions", fields: [isusuId], references: [id])
+
+  transactionTimeline TransactionTimeline[]
+}
+
+model TransactionTimeline {
+  id              String  @id @default(uuid())
+  transactionId   String
+  userId          String
+  isusuId         String?
+  amount          Float
+  transactionType String
+  status          String
+  description     String?
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  user        User        @relation("UserTimelines", fields: [userId], references: [id])
+  isusu       Isusu?      @relation("IsusuTimelines", fields: [isusuId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  isusuId   String? // If related to a group
+  walletId  String? // If related to a wallet
+  type      String // "transaction", "post", "group_transaction"
+  message   String
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false) // Ensure this line exists
+
+  user  User   @relation("UserNotifications", fields: [userId], references: [id])
+  isusu Isusu? @relation("IsusuNotifications", fields: [isusuId], references: [id])
+}
+
+model Isusu {
+  id                 String                @id @default(uuid())
+  isusuName          String
+  frequency          String
+  milestone          Float
+  isusuClass         String
+  createdAt          DateTime              @default(now())
+  invite_code        String?               @unique @default(uuid())
+  createdById        String
+  isActive           Boolean               @default(false)
+  createdBy          User                  @relation("CreatedIsusus", fields: [createdById], references: [id])
+  members            IsusuMembers[] // Existing relation
+  walletId           String?               @unique
+  wallet             Wallet?               @relation("IsusuWallet", fields: [walletId], references: [id])
+  transactions       Transaction[]         @relation("IsusuTransactions")
+  timelines          TransactionTimeline[] @relation("IsusuTimelines")
+  contributionAmount Float?
+  startDate          DateTime?
+  posts              Post[] // Existing relation
+  notifications      Notification[]        @relation("IsusuNotifications") // Existing relation
+  purchases          IsusuPurchase[] // Add this field to complete the relation with IsusuPurchase
+  price              Float?
+  tier               String
+  admins             User[]                @relation("IsusuAdmins") // Many-to-many relation
+  dues               IsusuDues[] // Reverse relation for IsusuDues
+  announcements Announcement[] // Relationship
+}
+
+model IsusuDues {
+  id          String   @id @default(uuid())
+  isusuId     String
+  userId      String
+  amount      Float
+  status      String   @default("pending") // pending, completed, failed
+  paymentDate DateTime @default(now())
+  isPaid      Boolean  @default(false)
+  dueDate     DateTime
+
+  isusu Isusu @relation(fields: [isusuId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+}
+
+model IsusuPurchase {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  user              User     @relation("UserIsusuPurchases", fields: [userId], references: [id], onDelete: Cascade)
+  tier              String
+  amount            Decimal
+  status            String   @default("pending")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  isusuId           String // Make this non-nullable
+  isusu             Isusu    @relation(fields: [isusuId], references: [id]) // Make the relation non-nullable
+  paystackReference String
+}
+
+model IsusuMembers {
+  id       String   @id @default(uuid())
+  isusuId  String
+  joinedAt DateTime @default(now())
+  userId   String
+  isusu    Isusu    @relation(fields: [isusuId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+model Announcement {
+  id        String   @id @default(uuid()) // Unique identifier
+  title     String   // Announcement title
+  message   String   // Announcement message
+  createdAt DateTime @default(now()) // Timestamp
+  isusuId   String   // Foreign key to Group
+  isusu     Isusu    @relation(fields: [isusuId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  title     String?
+  content   String
+  mediaUrl  String?
+  isusuId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  isusu Isusu @relation(fields: [isusuId], references: [id])
+}

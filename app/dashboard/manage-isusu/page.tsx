@@ -1,7 +1,7 @@
-import ManageIsusu from '@/app/ui/manage-isusu/manage-isusu';
+import ManageIsusu from '@/app/ui/isusu/manage-isusu';
 
 export default async function Page() {
-    return ( 
+    return (
         <ManageIsusu />
     );
 }
