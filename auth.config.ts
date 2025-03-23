@@ -14,8 +14,8 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id; // ✅ Ensure session includes user ID
-        session.user.accessToken = token.accessToken; // ✅ Persist accessToken
+        session.user.id = token.id as string; // ✅ Ensure session includes user ID
+        session.user.accessToken = token.accessToken as string; // ✅ Persist accessToken
       }
       return session;
     },
