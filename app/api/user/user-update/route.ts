@@ -17,17 +17,16 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("User email:", session.user.email);
-
     try {
         const formData = await req.formData();
-        const updates: Record<string, string | null> = {};
-
-        // Log received FormData
-        console.log("Received FormData:");
-        for (const pair of formData.entries()) {
-            console.log(pair[0], pair[1]);
+        const userId = formData.get("userId") as string | null; // ✅ Get userId from formData
+        if (!userId) {
+            return NextResponse.json({ error: "User ID is required" }, { status: 400 });
         }
+
+        console.log("Updating userId:", userId); // 🔍 Debugging log
+
+        const updates: Record<string, string | null> = {};
 
         formData.forEach((value, key) => {
             if (key !== "image") {
@@ -35,7 +34,6 @@ export async function PUT(req: Request) {
             }
         });
 
-        // Convert dateOfBirth to Date object (Prisma requires a Date type)
         if (updates.dateOfBirth) {
             updates.dateOfBirth = new Date(updates.dateOfBirth).toISOString();
         }
@@ -76,7 +74,7 @@ export async function PUT(req: Request) {
         console.log("Final data being updated:", updates);
 
         const updatedUser = await prisma.user.update({
-            where: { email: session.user.email as string },
+            where: { id: userId }, // ✅ Now updates the selected user, not just the logged-in user
             data: updates,
         });
 
@@ -91,3 +89,4 @@ export async function PUT(req: Request) {
         );
     }
 }
+
