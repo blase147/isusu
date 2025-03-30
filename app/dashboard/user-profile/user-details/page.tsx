@@ -1,24 +1,9 @@
-"use client"; // Ensure this is a Client Component
-
-import { useSearchParams } from "next/navigation";
+import UserDetails from "@/app/ui/user-profile/user-details/user-details";
 import { Suspense } from "react";
 
-function UserDetails() {
-    const searchParams = useSearchParams();
-    const userId = searchParams.get("id");
-
+export default function Page() {
     return (
-        <div>
-            <h1>User Details</h1>
-            <p>User ID: {userId}</p>
-        </div>
-    );
-}
-
-// ✅ Wrap UserDetails inside Suspense
-export default function UserDetailsPage() {
-    return (
-        <Suspense fallback={<p>Loading user details...</p>}>
+        <Suspense fallback={<div>Loading user details...</div>}>
             <UserDetails />
         </Suspense>
     );

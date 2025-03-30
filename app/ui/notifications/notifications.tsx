@@ -55,7 +55,7 @@ export default function Notifications() {
       )}
 
       {notifications.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-60 overflow-y-auto">
           {notifications.map((notification) => (
             <div
               key={notification.id}

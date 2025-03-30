@@ -2,35 +2,38 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image"; // ✅ Import for optimized image loading
 
 const MembersList = ({ isusuId }: { isusuId: string }) => {
-  const [members, setMembers] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [members, setMembers] = useState<
+    { id: string; name: string; email: string; profilePicture?: string | null }[]
+  >([]);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true); // ✅ Added loading state
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!isusuId) return;
 
     const fetchMembers = async () => {
       try {
-        setLoading(true); // Start loading
+        setLoading(true);
         const response = await fetch(`/api/isusu/members-list?isusuId=${isusuId}`);
         if (!response.ok) throw new Error("Failed to fetch members");
 
         const data = await response.json();
-        console.log("Fetched members:", data); // 🔍 Debugging log
+        console.log("Fetched members:", data);
 
         if (!data.members || data.members.length === 0) {
           setError("No members found.");
         } else {
           setMembers(data.members);
-          setError(null); // Clear any previous errors
+          setError(null);
         }
       } catch (err) {
         console.error("Error fetching members:", err);
         setError("Failed to load members.");
       } finally {
-        setLoading(false); // Stop loading
+        setLoading(false);
       }
     };
 
@@ -46,7 +49,15 @@ const MembersList = ({ isusuId }: { isusuId: string }) => {
       <h2 className="text-lg font-semibold mb-4">👥 Members</h2>
       <ul className="space-y-2">
         {members.map((member) => (
-          <li key={member.id} className="p-2 border-b">
+          <li key={member.id} className="p-2 border-b flex items-center gap-3">
+            {/* ✅ Display Profile Picture (Correct Property Name) */}
+            <Image
+              src={member.profilePicture || "/avatar.png"} // ✅ Use correct property
+              alt={member.name}
+              width={40}
+              height={40}
+              className="rounded-full border"
+            />
             <Link
               href={{ pathname: "/dashboard/user-profile/user-details", query: { userId: member.id } }}
               className="block"
@@ -54,7 +65,6 @@ const MembersList = ({ isusuId }: { isusuId: string }) => {
               <p className="font-medium text-blue-600 hover:underline">{member.name}</p>
               <p className="text-gray-500 text-sm">{member.email}</p>
             </Link>
-
           </li>
         ))}
       </ul>

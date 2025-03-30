@@ -19,7 +19,7 @@ interface User {
 
 const UserDetails = () => {
     const searchParams = useSearchParams();
-    const userId = searchParams.get("userId"); // Get userId from URL query
+    const userId = searchParams.get("user.Id"); // Get userId from URL query
     const [profile, setProfile] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
