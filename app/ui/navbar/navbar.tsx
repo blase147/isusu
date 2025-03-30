@@ -3,16 +3,21 @@
 import { useState, useEffect, useRef } from "react";
 import { BellIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 import Notifications from "../notifications/notifications";
+import Chats from "../messages/messages";
 import Image from "next/image";
 import { PowerIcon, EnvelopeIcon, UserIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 import { signOut } from './../../lib/auth';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [notificationCount, setNotificationCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   interface User {
     name: string;
@@ -22,7 +27,9 @@ const Navbar = () => {
 
   const [user, setUser] = useState<User | null>(null);
 
+  // fetch user data
   useEffect(() => {
+
     const fetchUser = async () => {
       try {
         const response = await fetch("/api/user");
@@ -45,32 +52,44 @@ const Navbar = () => {
     fetchUser();
   }, []);
 
+// fetch notifications
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await fetch("/api/notifications");
-        if (!response.ok) throw new Error("Failed to fetch notifications");
+        const notifResponse = await fetch("/api/notifications");
+        const chatResponse = await fetch("/api/messages");
 
-        const data = await response.json();
-        setNotificationCount(data.length);
+        if (notifResponse.ok) {
+          const notifData = await notifResponse.json();
+          setNotificationCount(notifData.length);
+        }
+        if (chatResponse.ok) {
+          const chatData = await chatResponse.json();
+          setUnreadMessageCount(chatData.length);
+        }
       } catch (error) {
-        console.error("Error fetching notifications:", error);
+        console.error("Error fetching counts:", error);
       }
     };
+
 
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
   }, []);
 
+//handle clik outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         notifRef.current && !notifRef.current.contains(event.target as Node) &&
+        chatRef.current && !chatRef.current.contains(event.target as Node) &&
         userRef.current && !userRef.current.contains(event.target as Node)
+
       ) {
         setIsNotifOpen(false);
         setIsOpen(false);
+        setIsChatOpen(false);
       }
     };
 
@@ -81,8 +100,10 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-md px-6 py-4 fixed top-0 w-full z-50 flex justify-between items-center">
       <div className="text-2xl font-bold text-gray-800">Dashboard</div>
-
+      <Link href="/dashboard/messages">Messages</Link> {/* 🔗 Full Chat Page Link */}
       <div className="flex items-center gap-4">
+
+        {/* notification */}
         <div className="relative" ref={notifRef}>
           <button
             type="button"
@@ -104,12 +125,27 @@ const Navbar = () => {
           )}
         </div>
 
+      {/* Chat Messages */}
+      <div className="relative" ref={chatRef}>
         <button
           type="button"
           title="Messages"
-          className="text-gray-600 hover:text-gray-900 focus:outline-none">
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className="relative text-gray-600 hover:text-gray-900 focus:outline-none"
+        >
           <ChatBubbleLeftIcon className="h-6 w-6" />
+            {unreadMessageCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
+                {unreadMessageCount || 0}
+              </span>
+            )}
         </button>
+        {isChatOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white shadow-md rounded-md p-2 border">
+              <Chats />
+            </div>
+        )}
+      </div>
 
         <div className="relative" ref={userRef}>
           <button

@@ -20,7 +20,7 @@ export async function GET(req: Request) {
         members: {
           include: {
             user: {
-              select: { id: true, name: true, email: true },
+              select: { id: true, name: true, email: true, profilePicture: true }, // Added profilePicture field
             },
           },
         },
@@ -44,6 +44,7 @@ export async function GET(req: Request) {
       id: member.user.id,
       name: member.user.name || "Unknown",
       email: member.user.email,
+      profilePicture: member.user.profilePicture || null, // Ensure null safety
       isAdmin: adminIds.has(member.user.id), // Check if the user is an admin
     }));
 

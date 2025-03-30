@@ -1,7 +1,7 @@
-import UserProfile from '@/app/ui/user-profile/user-profile';
+"use client";
 
-export default async function Page() {
-    return (
-        <UserProfile />
-    );
+import UserProfile from '../../ui/user-profile/user-profile';
+
+export default function Page() {
+    return <UserProfile />;
 }
