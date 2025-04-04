@@ -16,6 +16,7 @@ export const authConfig: NextAuthConfig = {
       if (session.user) {
         session.user.id = token.id as string; // ✅ Ensure session includes user ID
         session.user.accessToken = token.accessToken as string; // ✅ Persist accessToken
+        session.user.email = token.email ?? ""; // Ensure email is included with a fallback
       }
       return session;
     },

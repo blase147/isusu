@@ -2,91 +2,128 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { db } from "../../lib/firebase";
+import {
+    collection,
+    addDoc,
+    query,
+    where,
+    orderBy,
+    onSnapshot,
+    serverTimestamp,
+    Timestamp,
+} from "firebase/firestore";
+import Image from "next/image";
 
 const SendMessage = () => {
-    const { data: session } = useSession();
-    const [currentUser, setCurrentUser] = useState(session?.user || null);
     const searchParams = useSearchParams();
-    const currentUserIdFromURL = searchParams.get("user.id"); // Renamed from `currentUser`
+    const recipientId = searchParams.get("userId");
 
-    const [chat, setChat] = useState<{ messages: { id: string; text: string }[] } | null>(null);
+    interface User {
+        id: string;
+        email: string;
+        name?: string;
+        profilePicture?: string;
+    }
+
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [recipientProfile, setRecipientProfile] = useState<User | null>(null);
+    const [chat, setChat] = useState<{ id: string; text: string; senderId: string; recipientId: string; timestamp: Timestamp }[]>([]);
     const [message, setMessage] = useState("");
-    const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
-    const [selectedRecipient, setSelectedRecipient] = useState<{ id: string; name: string } | null>(null);
-    const [searchInput, setSearchInput] = useState("");
 
-    // Update currentUser when session changes
+    // Fetch current user details from API
     useEffect(() => {
-        console.log("Session data:", session);
-        console.log("User ID from URL:", currentUserIdFromURL);
-
-        if (session?.user) {
-            setCurrentUser(session.user);
-        } else if (currentUserIdFromURL) {
-            setCurrentUser({ id: currentUserIdFromURL, name: "Guest" });
-        } else {
-            console.error("No user session or URL parameter found.");
-        }
-    }, [session, currentUserIdFromURL]);
-
-
-
-    useEffect(() => {
-        const fetchUsers = async () => {
+        const fetchCurrentUser = async () => {
             try {
-                const res = await fetch("/api/users");
-                const data = await res.json();
+                const response = await fetch(`/api/user`);
+                const data = await response.json();
 
-                console.log("Fetched users:", data); // Debugging log
-
-                if (Array.isArray(data)) {
-                    setUsers(data);
+                if (response.ok) {
+                    setCurrentUser({
+                        id: data.id,
+                        email: data.email,
+                        name: data.name ?? "Unknown",
+                        profilePicture: data.profilePicture ?? "/avatar.png",
+                    });
                 } else {
-                    console.error("Unexpected data format:", data);
-                    setUsers([]); // Ensure it's an array to prevent crashes
+                    console.error("Failed to fetch current user:", data.error);
                 }
             } catch (error) {
-                console.error("Failed to fetch users:", error);
-                setUsers([]); // Fallback to an empty array
+                console.error("Error fetching current user:", error);
             }
         };
 
-        fetchUsers();
+        fetchCurrentUser();
     }, []);
 
+    // Fetch recipient profile
+    useEffect(() => {
+        if (!recipientId) return;
 
+        const fetchRecipientProfile = async () => {
+            try {
+                const response = await fetch(`/api/user/${recipientId}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    setRecipientProfile({
+                        id: data.id,
+                        email: data.email,
+                        name: data.name ?? "Unknown",
+                        profilePicture: data.profilePicture ?? "/avatar.png",
+                    });
+                } else {
+                    console.error("Failed to fetch recipient:", data.error);
+                }
+            } catch (error) {
+                console.error("Error fetching recipient profile:", error);
+            }
+        };
+
+        fetchRecipientProfile();
+    }, [recipientId]);
+
+    // Fetch chat history from Firestore
+    useEffect(() => {
+        if (!recipientProfile?.email || !currentUser?.email) return;
+
+        console.log("Fetching chat messages...");
+
+        const chatQuery = query(
+            collection(db, "messages"),
+            where("recipientId", "in", [recipientProfile.email, currentUser.email]),
+            where("senderId", "in", [recipientProfile.email, currentUser.email]),
+            orderBy("timestamp", "asc")
+        );
+
+        const unsubscribe = onSnapshot(chatQuery, (snapshot) => {
+            const messages = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...(doc.data() as {
+                    text: string;
+                    senderId: string;
+                    recipientId: string;
+                    timestamp: Timestamp;
+                }),
+            }));
+
+            setChat(messages);
+        });
+
+        return () => unsubscribe();
+    }, [recipientProfile?.email, currentUser?.email]);
+
+    // Send message to Firestore
     const handleSendMessage = async () => {
-
-        const senderId = currentUser?.id;
-
-        // if (!senderId) {
-        //     alert("Current user is not available.");
-        //     return;
-        // }
-        const recipientId = selectedRecipient?.id;
-
-        if (!recipientId || !message.trim()) {
-            alert("Recipient and message are required.");
-            return;
-        }
+        if (!message.trim() || !recipientProfile?.email || !currentUser?.email) return;
 
         try {
-            const response = await fetch("/api/messages", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ senderId, recipientId, message }),
+            await addDoc(collection(db, "messages"), {
+                text: message,
+                senderId: currentUser.email,
+                recipientId: recipientProfile.email,
+                timestamp: serverTimestamp(),
             });
-
-            if (!response.ok) {
-                throw new Error("Failed to send message");
-            }
-
-            const newMessage = { id: Date.now().toString(), text: message };
-
-            setChat((prevChat) => ({
-                messages: prevChat ? [...prevChat.messages, newMessage] : [newMessage],
-            }));
 
             setMessage("");
         } catch (error) {
@@ -94,53 +131,44 @@ const SendMessage = () => {
         }
     };
 
-    const filteredUsers = Array.isArray(users)
-        ? users.filter(user =>
-            user.name.toLowerCase().includes(searchInput.toLowerCase())
-        )
-        : [];
-
+    // Handle Enter key press
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            handleSendMessage();
+        }
+    };
 
     return (
         <div className="max-w-lg mx-auto p-4">
-            <h1 className="text-xl font-bold">Chat</h1>
+            {recipientProfile ? (
+                <div className="flex items-center gap-2 mt-4">
+                    <Image
+                        src={recipientProfile.profilePicture || "/avatar.png"}
+                        alt="Recipient Profile"
+                        width={40}
+                        height={40}
+                        className="rounded-full"
+                    />
+                    <span className="text-sm font-medium">Chatting with {recipientProfile.name}</span>
+                </div>
+            ) : (
+                <p className="text-red-500 text-sm">Recipient not found!</p>
+            )}
 
-            <div className="mb-2 relative">
-                <label className="block text-sm font-medium">Select recipient:</label>
-                <input
-                    type="text"
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    className="w-full border p-2 rounded-md mt-2"
-                    placeholder="Search for a recipient"
-                />
-
-                {searchInput && filteredUsers.length > 0 && (
-                    <ul className="absolute w-full border p-2 rounded-md mt-1 bg-white shadow-md max-h-40 overflow-y-auto">
-                        {filteredUsers.map(user => (
-                            <li
-                                key={user.id}
-                                onClick={() => {
-                                    setSelectedRecipient(user);
-                                    setSearchInput(user.name);
-                                }}
-                                className="cursor-pointer p-2 hover:bg-gray-200"
-                            >
-                                {user.name}
-                            </li>
-                        ))}
-                    </ul>
+            <div className="border p-2 rounded-md h-80 overflow-y-auto mt-4 flex flex-col">
+                {chat.length > 0 ? (
+                    chat.map((msg) => (
+                        <div
+                            key={msg.id}
+                            className={`p-2 mb-2 rounded-md max-w-xs ${msg.senderId === currentUser?.email ? "bg-blue-500 text-white self-end" : "bg-gray-300 text-black self-start"}`}
+                        >
+                            <p className="text-sm">{msg.text}</p>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-gray-400 text-sm text-center mt-2">No messages yet</p>
                 )}
-
-                {searchInput && filteredUsers.length === 0 && (
-                    <p className="text-gray-500 mt-1">No users found</p>
-                )}
-            </div>
-
-            <div className="border p-2 rounded-md h-80 overflow-y-auto">
-                {chat?.messages?.map((msg) => (
-                    <p key={msg.id} className="text-sm">{msg.text}</p>
-                ))}
             </div>
 
             <div className="mt-2 flex items-center gap-2">
@@ -149,13 +177,14 @@ const SendMessage = () => {
                     placeholder="Type a message..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     className="flex-1 p-2 border rounded-md text-sm"
                 />
                 <button
                     type="button"
                     className="bg-blue-500 text-white px-2 py-1 rounded-md text-sm"
                     onClick={handleSendMessage}
-                    disabled={!message.trim() || !selectedRecipient}
+                    disabled={!message.trim()}
                 >
                     Send
                 </button>

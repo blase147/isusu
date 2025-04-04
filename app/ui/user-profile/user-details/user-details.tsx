@@ -76,7 +76,29 @@ const UserDetails = () => {
                     />
                 </div>
             </div>
-
+            <div className="flex justify-center mt-4">
+                <a
+                    href={`/dashboard/send-message?userId=${profile.id}`}
+                    className="flex items-center text-blue-500 hover:text-blue-700"
+                    title="Send Message"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-6 h-6 mr-2"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0a2.25 2.25 0 00-2.25-2.25H4.5a2.25 2.25 0 00-2.25 2.25m19.5 0l-9.75 6.5m0 0L2.25 6.75m9.75 6.5v6.5"
+                        />
+                    </svg>
+                    Send Message
+                </a>
+            </div>
             <div className="space-y-4">
                 {Object.entries(profile).map(([key, value]) => {
                     if (key === "profilePicture" || key === "id") return null;

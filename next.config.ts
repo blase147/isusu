@@ -1,4 +1,5 @@
-module.exports = {
+/** @type {import('next').NextConfig} */
+const nextConfig: import('next').NextConfig = {
   images: {
     remotePatterns: [
       {
@@ -7,4 +8,14 @@ module.exports = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/socket",
+        destination: "/api/socket",
+      },
+    ];
+  },
 };
+
+module.exports = nextConfig;
