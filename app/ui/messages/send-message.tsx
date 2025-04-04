@@ -111,7 +111,7 @@ const SendMessage = () => {
         });
 
         return () => unsubscribe();
-    }, [recipientProfile?.id, currentUser?.id]);  // Use ids for accurate query
+    }, [recipientProfile?.id, recipientProfile?.email, currentUser?.id, currentUser?.email]);  // Use ids and emails for accurate query
 
     // Send message to Firestore
     const handleSendMessage = async () => {
