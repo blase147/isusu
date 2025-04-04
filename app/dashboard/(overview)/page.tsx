@@ -6,6 +6,8 @@ import {
   FaComment, FaShare, FaBars, FaTimes
 } from 'react-icons/fa';
 
+export const dynamic = "force-dynamic"; // disables prerendering
+
 const ChatBox = () => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -26,6 +28,7 @@ const ChatBox = () => {
         </div>
       ) : (
         <button
+          type='button'
           onClick={() => setIsOpen(true)}
           className="bg-blue-600 text-white p-3 rounded-full shadow-lg"
         >
@@ -88,6 +91,8 @@ const Page = () => {
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 text-gray-900">
       {/* Mobile Menu */}
       <button
+        type='button'
+        aria-label="Toggle Menu"
         onClick={() => setMenuOpen(!menuOpen)}
         className="md:hidden p-4 fixed top-2 left-2 bg-blue-600 text-white rounded-full shadow-md"
       >
