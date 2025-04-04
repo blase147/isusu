@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface Notification {
   id: string;
@@ -57,15 +58,16 @@ export default function Notifications() {
       {notifications.length > 0 ? (
         <div className="space-y-4 max-h-60 overflow-y-auto">
           {notifications.map((notification) => (
-            <div
+            <Link
               key={notification.id}
-              className="p-4 border rounded-md bg-gray-50 hover:bg-gray-100 transition"
+              href={`/dashboard/notification-details/${notification.id}`} // Link to the details page of the notification
+              className="block p-4 border rounded-md bg-gray-50 hover:bg-gray-100 transition"
             >
               <p className="text-gray-800">{notification.message}</p>
               <small className="text-gray-500">
                 {new Date(notification.createdAt).toLocaleString()}
               </small>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
