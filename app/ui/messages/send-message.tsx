@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -40,7 +40,7 @@ const SendMessage = () => {
 
                 if (response.ok) {
                     setCurrentUser({
-                        id: data.id,
+                        id: data.id,  // Include the id here
                         email: data.email,
                         name: data.name ?? "Unknown",
                         profilePicture: data.profilePicture ?? "/avatar.png",
@@ -67,7 +67,7 @@ const SendMessage = () => {
 
                 if (response.ok) {
                     setRecipientProfile({
-                        id: data.id,
+                        id: data.id,  // Include the id here
                         email: data.email,
                         name: data.name ?? "Unknown",
                         profilePicture: data.profilePicture ?? "/avatar.png",
@@ -91,8 +91,8 @@ const SendMessage = () => {
 
         const chatQuery = query(
             collection(db, "messages"),
-            where("recipientId", "in", [recipientProfile.email, currentUser.email]),
-            where("senderId", "in", [recipientProfile.email, currentUser.email]),
+            where("recipientId", "in", [recipientProfile.id, currentUser.id]),  // Query based on ids
+            where("senderId", "in", [recipientProfile.id, currentUser.id]),  // Query based on ids
             orderBy("timestamp", "asc")
         );
 
@@ -111,7 +111,7 @@ const SendMessage = () => {
         });
 
         return () => unsubscribe();
-    }, [recipientProfile?.email, currentUser?.email]);
+    }, [recipientProfile?.id, currentUser?.id]);  // Use ids for accurate query
 
     // Send message to Firestore
     const handleSendMessage = async () => {
@@ -120,8 +120,8 @@ const SendMessage = () => {
         try {
             await addDoc(collection(db, "messages"), {
                 text: message,
-                senderId: currentUser.email,
-                recipientId: recipientProfile.email,
+                senderId: currentUser.id,  // Include sender's id
+                recipientId: recipientProfile.id,  // Include recipient's id
                 timestamp: serverTimestamp(),
             });
 
@@ -161,7 +161,7 @@ const SendMessage = () => {
                     chat.map((msg) => (
                         <div
                             key={msg.id}
-                            className={`p-2 mb-2 rounded-md max-w-xs ${msg.senderId === currentUser?.email ? "bg-blue-500 text-white self-end" : "bg-gray-300 text-black self-start"}`}
+                            className={`p-2 mb-2 rounded-md max-w-xs ${msg.senderId === currentUser?.id ? "bg-blue-500 text-white self-end" : "bg-gray-300 text-black self-start"}`}
                         >
                             <p className="text-sm">{msg.text}</p>
                         </div>

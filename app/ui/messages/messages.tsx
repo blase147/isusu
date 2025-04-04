@@ -1,16 +1,12 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
-    collection, query, where, orderBy, onSnapshot, getDoc, doc, getDocs, Timestamp
+    collection, query, where, orderBy, onSnapshot, getDocs, Timestamp
 } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 
 export default function Messages() {
-    const searchParams = useSearchParams();
-    const userId = searchParams.get("userId");
-
     const [error, setError] = useState<string | null>(null);
     const [recentChats, setRecentChats] = useState<Chat[]>([]);
     const [filteredChats, setFilteredChats] = useState<Chat[]>([]);
@@ -75,13 +71,13 @@ export default function Messages() {
 
         const inboxQuery = query(
             collection(db, "messages"),
-            where("recipientId", "==", currentUser.email),
+            where("recipientId", "==", currentUser.id),
             orderBy("timestamp", "desc")
         );
 
         const sentQuery = query(
             collection(db, "messages"),
-            where("senderId", "==", currentUser.email),
+            where("senderId", "==", currentUser.id),
             orderBy("timestamp", "desc")
         );
 
@@ -107,6 +103,7 @@ export default function Messages() {
 
                 const updatedChats: Chat[] = await Promise.all(
                     Array.from(grouped.entries()).map(async ([otherEmail, latestMsg]) => {
+                        // Fetch user data using your API
                         const userDetails: User = {
                             id: otherEmail, // Temporarily store email
                             email: otherEmail,
@@ -115,17 +112,21 @@ export default function Messages() {
                         };
 
                         try {
-                            const userSnap = await getDoc(doc(db, "users", otherEmail));
-                            if (userSnap.exists()) {
-                                const userData = userSnap.data();
-                                userDetails.id = userData.id || otherEmail; // ✅ Set to UID if available
+                            // Make a request to your user API here
+                            const userResponse = await fetch(`/api/user/${otherEmail}`);
+                            const userData = await userResponse.json();
+
+                            if (userResponse.ok) {
+                                // Update user details
+                                userDetails.id = userData.id || otherEmail; // Ensure it has the correct ID
                                 userDetails.name = userData.name || otherEmail;
                                 userDetails.profilePicture = userData.profilePicture || "/avatar.png";
+                            } else {
+                                console.warn("User data fetch failed for:", otherEmail);
                             }
                         } catch {
-                            console.warn("No user doc for", otherEmail);
+                            console.warn("Error fetching user data for", otherEmail);
                         }
-
 
                         return {
                             id: latestMsg.id,
@@ -233,21 +234,34 @@ export default function Messages() {
             <ul className="max-h-60 overflow-y-auto">
                 {filteredChats.length > 0 ? (
                     filteredChats.map((chat) => (
-                        <li
-                            key={chat.id}
-                            className="p-2 border-b hover:bg-gray-100 cursor-pointer"
-                            onClick={() => handleChatClick(chat.id, chat.user.id)}
-                        >
-                            <div>
-                                <p className="font-medium">{chat.user.name}</p>
-                                <p className="text-sm text-gray-500">{chat.lastMessage}</p>
-                            </div>
-                        </li>
+                        chat.user.id !== currentUser?.id && ( // Only render chat details for other users
+                            <li
+                                key={chat.id}
+                                className="p-2 border-b hover:bg-gray-100 cursor-pointer"
+                                onClick={() => handleChatClick(chat.id, chat.user.id)}
+                            >
+                                <div className="flex items-center">
+                                    <Image
+                                        src={chat.user.profilePicture || "/avatar.png"} // Fallback to default avatar if no picture
+                                        alt={chat.user.name}
+                                        width={40} // Set width for optimization
+                                        height={40} // Set height for optimization
+                                        className="w-10 h-10 rounded-full mr-3" // Styling the profile picture
+                                    />
+                                    <div>
+                                        <p className="font-medium">{chat.user.name}</p>
+                                        <p className="text-sm text-gray-500">{chat.lastMessage}</p>
+                                    </div>
+                                </div>
+                            </li>
+                        )
                     ))
                 ) : (
                     <li className="p-2 text-gray-500">No messages found.</li>
                 )}
             </ul>
+
+
         </div>
     );
 }
