@@ -6,8 +6,6 @@ import {
   FaComment, FaShare, FaBars, FaTimes
 } from 'react-icons/fa';
 
-export const dynamic = "force-dynamic"; // disables prerendering
-
 const ChatBox = () => {
   const [isOpen, setIsOpen] = useState(false);
 
