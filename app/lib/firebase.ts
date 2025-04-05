@@ -1,6 +1,7 @@
 // lib/firebase.ts
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,7 +12,8 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-export { db };
+const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
+export { db, analytics };
