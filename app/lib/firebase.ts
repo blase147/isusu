@@ -1,4 +1,6 @@
-import { initializeApp, getApps } from "firebase/app";
+'use client';
+
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -11,8 +13,15 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+let app;
+let db;
+let auth;
+
+// 👇 This ensures Firebase is only initialized in the browser
+if (typeof window !== "undefined") {
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+}
 
 export { db, auth };
