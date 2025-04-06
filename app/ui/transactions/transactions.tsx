@@ -61,6 +61,7 @@ export default function Transactions() {
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-4">
           <button
+            type="button"
             className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
             onClick={() => router.push("/dashboard/transactions/deposit")}
           >
@@ -73,6 +74,7 @@ export default function Transactions() {
             Withdraw
           </button>
           <button
+            type="button"
             className="bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 col-span-2"
             onClick={() => router.push("/dashboard/transactions/send-money")}
           >

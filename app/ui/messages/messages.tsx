@@ -248,7 +248,7 @@ export default function Messages() {
                                         alt={chat.user.name}
                                         width={40} // Set width for optimization
                                         height={40} // Set height for optimization
-                                        className="w-10 h-10 rounded-full mr-3" // Styling the profile picture
+                                        className="w-10 h-10 object-cover rounded-full mr-3" // Styling the profile picture
                                     />
                                     <div>
                                         <p className="font-medium">{chat.user.name}</p>

@@ -142,18 +142,20 @@ const SendMessage = () => {
     return (
         <div className="max-w-lg mx-auto p-4">
             {recipientProfile ? (
-                <div className="flex items-center gap-2 mt-4">
+                <div className="flex flex-col justify-center items-center gap-2 mt-4">
+
                     <Image
                         src={recipientProfile.profilePicture || "/avatar.png"}
                         alt="Recipient Profile"
-                        width={40}
-                        height={40}
-                        className="rounded-full"
+                        width={100}
+                        height={100}
+                        className="w-[100px] h-[100px] object-cover rounded-full"
                     />
+
                     <span className="text-sm font-medium">Chatting with {recipientProfile.name}</span>
                 </div>
             ) : (
-                <p className="text-red-500 text-sm">Recipient not found!</p>
+                <p className="text-red-500 text-sm">Loading...</p>
             )}
 
             <div className="border p-2 rounded-md h-80 overflow-y-auto mt-4 flex flex-col">

@@ -15,10 +15,10 @@ export async function POST(req: NextRequest) {
     }
 
     const userEmail = session.user.email.toLowerCase();
-    const { amount: amountStr, bankName, bankCode, accountNumber } = await req.json();
+    const { amount: amountStr, bankName, bankCode, accountNumber, groupId, isIsusuGroup = false } = await req.json();
     const amount = parseFloat(amountStr);
 
-    if (!amount || isNaN(amount) || amount <= 0 || !bankName || !bankCode || !accountNumber) {
+    if (!amount || isNaN(amount) || amount <= 0 || !bankName || !bankCode || !accountNumber || (isIsusuGroup && !groupId)) {
       return NextResponse.json({ error: "Invalid or missing required fields" }, { status: 400 });
     }
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: userEmail },
-      select: { id: true, walletId: true },
+      select: { id: true, walletId: true, name: true },
     });
 
     if (!user || !user.walletId) {
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
           type: "WITHDRAWAL",
           status: "SUCCESS",
           reference: transferData.data.reference,
-          description: "Wallet withdrawal",
+          description: `Withdrawal from ${user.name || (isIsusuGroup ? "Isusu Group" : "Unknown")}`,
         },
       }),
     ]);

@@ -134,7 +134,7 @@ export async function POST(req: Request) {
           senderId: sender.id,
           recipientId: recipient.id,
           reference: transactionRef,
-          description: `Money transfer to ${recipient.email}`,
+          description: `Money transfer to ${recipient.name || recipient.email}`,
         },
       }),
     ]);
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
       data: {
         userId: sender.id,
         type: "TRANSFER",
-        message: `You sent ₦${amount} to ${recipient.email}.`,
+        message: `You sent ₦${amount} to ${recipient.name}.`,
       },
     });
 
@@ -152,7 +152,7 @@ export async function POST(req: Request) {
       data: {
         userId: recipient.id,
         type: "TRANSFER",
-        message: `You received ₦${amount} from ${sender.email}.`,
+        message: `You received ₦${amount} from ${sender.name}.`,
       },
     });
 
