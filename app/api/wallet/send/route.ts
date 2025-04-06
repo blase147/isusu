@@ -46,62 +46,63 @@ export async function POST(req: Request) {
 
     const transactionRef = `TX-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-    if (isIsusu) {
-      if (!groupId || typeof groupId !== "string") {
-        return NextResponse.json({ success: false, message: "Invalid group ID" }, { status: 400 });
-      }
+    // if (isIsusu) {
+    //   if (!groupId || typeof groupId !== "string") {
+    //     return NextResponse.json({ success: false, message: "Invalid group ID" }, { status: 400 });
+    //   }
 
-      const isusu = await prisma.isusu.findUnique({
-        where: { id: groupId },
-        include: { wallet: true },
-      })
+    //   const isusu = await prisma.isusu.findUnique({
+    //     where: { id: groupId },
+    //     include: { wallet: true },
+    //   })
 
-      if (!isusu || !isusu.wallet) {
-        return NextResponse.json({ success: false, message: "Isusu group not found or has no wallet" }, { status: 404 });
-      }
+    //   if (!isusu || !isusu.wallet) {
+    //     return NextResponse.json({ success: false, message: "Isusu group not found or has no wallet" }, { status: 404 });
+    //   }
 
-      if (sender.wallet.balance < amount) {
-        return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
-      }
+    //   if (sender.wallet.balance < amount) {
+    //     return NextResponse.json({ success: false, message: "Insufficient balance" }, { status: 400 });
+    //   }
 
-      try {
-        await prisma.$transaction([
-          prisma.wallet.update({
-            where: { id: sender.wallet.id },
-            data: { balance: { decrement: amount } },
-          }),
-          prisma.wallet.update({
-            where: { id: isusu.wallet.id },
-            data: { balance: { increment: amount } },
-          }),
-          prisma.transaction.create({
-            data: {
-              amount,
-              type: "TRANSFER",
-              status: "SUCCESS",
-              senderId: sender.id,
-              isusuId: isusu.id,
-              reference: transactionRef,
-              description: `Donation to Isusu Group: ${isusu.isusuName}`,
-            },
-          }),
-          prisma.notification.create({
-            data: {
-              userId: sender.id,
-              type: "TRANSFER",
-              message: `You sent ₦${amount} to the Isusu group: ${isusu.isusuName}.`,
-            },
-          }),
-        ]);
-      } catch (error) {
-        console.error("🚨 Transaction Failed:", error);
-      }
+    //   try {
+    //     await prisma.$transaction([
+    //       prisma.wallet.update({
+    //         where: { id: sender.wallet.id },
+    //         data: { balance: { decrement: amount } },
+    //       }),
+    //       prisma.wallet.update({
+    //         where: { id: isusu.wallet.id },
+    //         data: { balance: { increment: amount } },
+    //       }),
+    //       prisma.transaction.create({
+    //         data: {
+    //           amount,
+    //           type: "TRANSFER",
+    //           status: "SUCCESS",
+    //           senderId: sender.id,
+    //           isusuId: isusu.id,
+    //           reference: transactionRef,
+    //           description: `Donation to Isusu Group: ${isusu.isusuName}`,
+    //         },
+    //       }),
+    //       prisma.notification.create({
+    //         data: {
+    //           userId: sender.id,
+    //           type: "TRANSFER",
+    //           message: `You sent ₦${amount} to the Isusu group: ${isusu.isusuName}.`,
+    //         },
+    //       }),
+    //     ]);
+    //   } catch (error) {
+    //     console.error("🚨 Transaction Failed:", error);
+    //   }
 
 
-      return NextResponse.json({ success: true, message: "Funds transferred to Isusu group wallet" }, { status: 200 });
-    }
+    //   return NextResponse.json({ success: true, message: "Funds transferred to Isusu group wallet" }, { status: 200 });
+    // }
 
     // Handle individual transfers
+
     const recipientEmailLower = recipientEmail.toLowerCase();
     let recipient = await prisma.user.findUnique({
       where: { email: recipientEmailLower },
@@ -143,16 +144,20 @@ export async function POST(req: Request) {
     await prisma.notification.create({
       data: {
         userId: sender.id,
+        senderId: sender.id,
+        recipientId: recipient.id,
         type: "TRANSFER",
-        message: `You sent ₦${amount} to ${recipient.name}.`,
+        message: `You sent ₦${amount} to ${recipient.name || recipient.email}.`,
       },
     });
 
     await prisma.notification.create({
       data: {
         userId: recipient.id,
-        type: "TRANSFER",
-        message: `You received ₦${amount} from ${sender.name}.`,
+        senderId: sender.id,
+        recipientId: recipient.id,
+        type: "RECEIVE",
+        message: `You received ₦${amount} from ${sender.name || sender.email}.`,
       },
     });
 

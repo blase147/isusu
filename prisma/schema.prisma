@@ -12,13 +12,13 @@ model User {
   email          String    @unique
   name           String?
   password       String
-  profilePicture String? // Field for profile picture URL
-  phone          String? // Field for phone number
-  dateOfBirth    DateTime? // Field for date of birth
-  address        String? // New field for address
-  biography      String? // New field for biography
-  bankAccount    String? // New field for bank account
-  occupation     String? // New field for occupation
+  profilePicture String?
+  phone          String?
+  dateOfBirth    DateTime?
+  address        String?
+  biography      String?
+  bankAccount    String?
+  occupation     String?
 
   createdIsusus        Isusu[]               @relation("CreatedIsusus")
   isusuMemberships     IsusuMembers[]
@@ -28,13 +28,18 @@ model User {
   wallet               Wallet?               @relation("UserWallet", fields: [walletId], references: [id])
   timelines            TransactionTimeline[] @relation("UserTimelines")
   posts                Post[]
-  notifications        Notification[]        @relation("UserNotifications")
-  isusuPurchases       IsusuPurchase[]       @relation("UserIsusuPurchases")
-  isususAdminFor       Isusu[]               @relation("IsusuAdmins")
-  dues                 IsusuDues[]
+
+  // 🛠️ FIXED: distinct relation names
+  recipientNotifications Notification[] @relation("ReceivedNotifications")
+  sentNotifications      Notification[] @relation("SentNotifications") // sender
+
+  isusuPurchases IsusuPurchase[] @relation("UserIsusuPurchases")
+  isususAdminFor Isusu[]         @relation("IsusuAdmins")
+  dues           IsusuDues[]
+
   sentMessages     Message[] @relation(name: "SentMessages")
   receivedMessages Message[] @relation(name: "ReceivedMessages")
-  }
+}
 
 model Wallet {
   id        String   @id @default(uuid())
@@ -80,22 +85,26 @@ model TransactionTimeline {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  isusuId   String? // If related to a group
-  walletId  String? // If related to a wallet
-  type      String // "transaction", "post", "group_transaction"
-  message   String
-  createdAt DateTime @default(now())
-  isRead    Boolean  @default(false) // Ensure this line exists
+  id          String   @id @default(uuid())
+  userId      String
+  senderId    String?
+  recipientId String?  @map("recipient_id") // <-- This is key
+  isusuId     String?
+  walletId    String?
+  type        String
+  message     String
+  createdAt   DateTime @default(now())
+  isRead      Boolean  @default(false)
 
-  user  User   @relation("UserNotifications", fields: [userId], references: [id])
-  isusu Isusu? @relation("IsusuNotifications", fields: [isusuId], references: [id])
+  sender    User?  @relation("SentNotifications", fields: [senderId], references: [id])
+  recipient User?  @relation("ReceivedNotifications", fields: [recipientId], references: [id])
+  isusu     Isusu? @relation("IsusuNotifications", fields: [isusuId], references: [id])
 }
 
 model Isusu {
   id                 String                @id @default(uuid())
   isusuName          String
+  isusuImage         String? // Field to store the image URL for the Isusu group
   frequency          String
   milestone          Float
   isusuClass         String
@@ -118,7 +127,7 @@ model Isusu {
   tier               String
   admins             User[]                @relation("IsusuAdmins") // Many-to-many relation
   dues               IsusuDues[] // Reverse relation for IsusuDues
-  announcements Announcement[] // Relationship
+  announcements      Announcement[] // Relationship
 }
 
 model IsusuDues {
@@ -160,10 +169,10 @@ model IsusuMembers {
 
 model Announcement {
   id        String   @id @default(uuid()) // Unique identifier
-  title     String   // Announcement title
-  message   String   // Announcement message
+  title     String // Announcement title
+  message   String // Announcement message
   createdAt DateTime @default(now()) // Timestamp
-  isusuId   String   // Foreign key to Group
+  isusuId   String // Foreign key to Group
   isusu     Isusu    @relation(fields: [isusuId], references: [id], onDelete: Cascade)
 }
 
@@ -186,12 +195,8 @@ model Message {
   recipientId String
   text        String
   createdAt   DateTime @default(now())
-  isRead        Boolean  @default(false)  // New field to track whether the message has been read
+  isRead      Boolean  @default(false) // New field to track whether the message has been read
 
-  sender      User @relation(name: "SentMessages", fields: [senderId], references: [id])
-  recipient   User @relation(name: "ReceivedMessages", fields: [recipientId], references: [id])
+  sender    User @relation(name: "SentMessages", fields: [senderId], references: [id])
+  recipient User @relation(name: "ReceivedMessages", fields: [recipientId], references: [id])
 }
-
-
-
-

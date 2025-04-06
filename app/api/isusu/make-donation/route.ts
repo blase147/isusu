@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     // Fetch Isusu group wallet & owner
     const isusu = await prisma.isusu.findUnique({
       where: { id: isusuId },
-      select: { walletId: true, createdById: true },
+      select: { walletId: true, createdById: true, isusuName: true },
     });
 
     if (!isusu || !isusu.walletId) {
@@ -81,18 +81,20 @@ export async function POST(req: Request) {
           senderId: user.id,
           recipientId: isusu.createdById, // The user who created the Isusu group
           amount,
-          type: "donation",
-          status: "completed",
+          type: "DONATION",
+          status: "COMPLETED",
           reference: `txn_${Date.now()}`,
           description: description || "Isusu group contribution",
         },
       }),
       prisma.notification.create({
         data: {
-          userId: isusu.createdById, // Notify the Isusu group owner
-          type: "donation",
-          message: `${user.name} has donated ₦${amount} to your Isusu group.`,
-          isRead: false,
+          userId: user.id, // The user who created the Isusu group
+          senderId: user.id, // The user who created the Isusu group
+          recipientId: isusu.createdById,
+          isusuId,
+          type: "DONATION",
+          message: `${user.name} has donated ₦${amount} to your Isusu group: ${isusu.isusuName}.`,
         },
       }),
     ]);

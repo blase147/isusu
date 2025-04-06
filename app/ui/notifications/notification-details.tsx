@@ -8,9 +8,14 @@ const NotificationDetails = () => {
     interface Notification {
         message: string;
         createdAt: string;
+        type: string;
         user: {
             name: string;
-            image: string;
+            profilePicture: string;
+        };
+        sender?: {
+            name: string;
+            profilePicture: string;
         };
         transaction?: {
             type: string;
@@ -18,7 +23,15 @@ const NotificationDetails = () => {
             description: string;
             reference: string;
         };
+        recipient?: {
+            name: string;
+            profilePicture: string;
+            isusuId?: string; // ID for Isusu (optional)
+        };
+        isusuName?: string;
+        isusuImage?: string; // Image for Isusu (optional)
     }
+
 
     const [notification, setNotification] = useState<Notification | null>(null);
     const [loading, setLoading] = useState(true);
@@ -65,22 +78,43 @@ const NotificationDetails = () => {
 
                 {!loading && !error && notification && (
                     <div className="space-y-6">
-                        {/* User Info */}
-                        <div className="flex items-center space-x-4">
-                            <Image
-                                src={notification.user.image}
-                                alt={notification.user.name}
-                                width={56}
-                                height={56}
-                                className="rounded-full object-cover border"
-                            />
-                            <div>
-                                <p className="text-lg font-medium text-gray-900">{notification.user.name}</p>
-                                <p className="text-sm text-gray-500">
-                                    {new Date(notification.createdAt).toLocaleString()}
-                                </p>
+                        {/* Transaction Participants */}
+                        <div className="flex items-center justify-center space-x-6">
+                            {/* Sender */}
+                            <div className="flex flex-col items-center">
+                                <Image
+                                    src={notification?.sender?.profilePicture || "/avatar.png"}
+                                    alt={notification?.sender?.name || "Sender"}
+                                    width={100}
+                                    height={100}
+                                    className="w-[100px] h-[100px] object-cover rounded-full"
+                                />
+                                <p className="text-sm text-gray-700 mt-1">{notification?.sender?.name}</p>
+                                <span className="text-xs text-gray-500">Sender</span>
+                            </div>
+
+                            {/* Arrow + Label */}
+                            <div className="flex flex-col items-center text-gray-500">
+                                <span className="text-lg">➡️</span>
+                                <span className="text-xs font-semibold text-gray-600 mt-1">
+                                    {notification?.type || "Transaction"}
+                                </span>
+                            </div>
+
+                            {/* Receiver */}
+                            <div className="flex flex-col items-center">
+                                <Image
+                                    src={notification?.recipient?.profilePicture || notification?.isusu.isusuImage || "/avatar.png"}
+                                    alt={notification?.recipient?.name || "Receiver"}
+                                    width={100}
+                                    height={100}
+                                    className="w-[100px] h-[100px] object-cover rounded-full"
+                                />
+                                <p className="text-sm text-gray-700 mt-1">{notification?.isusu.isusuName || notification?.recipient?.name}</p>
+                                <span className="text-xs text-gray-500">Receiver</span>
                             </div>
                         </div>
+
 
                         {/* Notification Message */}
                         <div className="bg-gray-50 border rounded-md p-4">
@@ -88,14 +122,12 @@ const NotificationDetails = () => {
                         </div>
 
                         {/* Transaction Details */}
-                        {notification.transaction && (
+                        {notification && (
                             <div className="bg-gray-50 border rounded-lg p-4">
                                 <h2 className="text-md font-semibold text-gray-800 mb-2">Transaction Details</h2>
                                 <ul className="space-y-1 text-sm text-gray-600">
-                                    <li><span className="font-medium">Type:</span> {notification.transaction.type}</li>
-                                    <li><span className="font-medium">Amount:</span> {notification.transaction.amount}</li>
-                                    <li><span className="font-medium">Description:</span> {notification.transaction.description}</li>
-                                    <li><span className="font-medium">Reference:</span> {notification.transaction.reference}</li>
+                                    <li><span className="font-medium">Type:</span> {notification.type}</li>
+                                    <li><span className="font-medium">Amount:</span> {notification.createdAt}</li>
                                 </ul>
                             </div>
                         )}

@@ -23,7 +23,20 @@ export async function GET(req: Request) {
 
     const notification = await prisma.notification.findUnique({
       where: { id: notificationId },
-      include: { user: true, isusu: true },
+      include: {
+        recipient: {
+          select: { name: true, profilePicture: true }
+        },
+        sender: {
+          select: { name: true, profilePicture: true }
+        },
+        isusu: {
+          select: {
+            isusuName: true,
+            isusuImage: true
+          } // Fetch the Isusu group details
+        },
+      }
     });
 
     if (!notification || notification.userId !== userId) {
@@ -36,6 +49,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Failed to fetch notification details" }, { status: 500 });
   }
 }
+
 
 // 📌 PATCH /api/notifications/notification-details?id={id} - Mark notification as read
 export async function PATCH(req: Request) {
