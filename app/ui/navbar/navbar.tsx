@@ -9,12 +9,25 @@ import { PowerIcon, EnvelopeIcon, UserIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { signOut } from './../../lib/auth';
 
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [notificationCount, setNotificationCount] = useState(0);
+
+  interface NavbarNotification {
+    id: string;
+    isRead: boolean; // Boolean for read status
+    userId: string;
+    type: string;
+    message: string;
+    createdAt: string;
+  }
+
+  const [notifications, setNotifications] = useState<NavbarNotification[]>([]);
+
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
@@ -27,9 +40,8 @@ const Navbar = () => {
 
   const [user, setUser] = useState<User | null>(null);
 
-  // fetch user data
+  // Fetch user data
   useEffect(() => {
-
     const fetchUser = async () => {
       try {
         const response = await fetch("/api/user");
@@ -52,7 +64,7 @@ const Navbar = () => {
     fetchUser();
   }, []);
 
-// fetch notifications
+  // Fetch notifications and messages
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -61,8 +73,10 @@ const Navbar = () => {
 
         if (notifResponse.ok) {
           const notifData = await notifResponse.json();
-          setNotificationCount(notifData.length);
+          setNotifications(notifData as NavbarNotification[]);
+          setNotificationCount(notifData.filter((n: NavbarNotification) => !n.isRead).length); // Filter based on isRead
         }
+
         if (chatResponse.ok) {
           const chatData = await chatResponse.json();
           setUnreadMessageCount(chatData.length);
@@ -72,20 +86,16 @@ const Navbar = () => {
       }
     };
 
-
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
-    return () => clearInterval(interval);
   }, []);
 
-//handle clik outside
+  // Handle click outside to close menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         notifRef.current && !notifRef.current.contains(event.target as Node) &&
         chatRef.current && !chatRef.current.contains(event.target as Node) &&
         userRef.current && !userRef.current.contains(event.target as Node)
-
       ) {
         setIsNotifOpen(false);
         setIsOpen(false);
@@ -97,13 +107,46 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleNotificationClick = async (id: string) => {
+    const notification = notifications.find((n) => n.id === id);
+
+    if (notification && !notification.isRead) {
+      try {
+        const response = await fetch(`/api/notifications/notification-details?id=${id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            // If your backend doesn't need this Authorization header, you can remove it
+            Authorization: `Bearer ${user?.email}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to mark notification as read");
+        }
+
+        const data = await response.json();
+
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+        );
+        setNotificationCount((prevCount) => prevCount - 1);
+
+        console.log("Notification marked as read:", data);
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+      }
+    }
+  };
+
+
+
   return (
     <nav className="bg-white shadow-md px-6 py-4 fixed top-0 w-full z-50 flex justify-between items-center">
       <div className="text-2xl font-bold text-gray-800">Dashboard</div>
       <Link href="/dashboard/messages">Messages</Link> {/* 🔗 Full Chat Page Link */}
       <div className="flex items-center gap-4">
-
-        {/* notification */}
+        {/* Notification */}
         <div className="relative" ref={notifRef}>
           <button
             type="button"
@@ -120,33 +163,38 @@ const Navbar = () => {
           </button>
           {isNotifOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white shadow-md rounded-md p-2 border">
-              <Notifications />
+              <Notifications
+
+                notifications={notifications}
+                onNotificationClick={handleNotificationClick}
+              />
             </div>
           )}
         </div>
 
-      {/* Chat Messages */}
-      <div className="relative" ref={chatRef}>
-        <button
-          type="button"
-          title="Messages"
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className="relative text-gray-600 hover:text-gray-900 focus:outline-none"
-        >
-          <ChatBubbleLeftIcon className="h-6 w-6" />
+        {/* Chat Messages */}
+        <div className="relative" ref={chatRef}>
+          <button
+            type="button"
+            title="Messages"
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="relative text-gray-600 hover:text-gray-900 focus:outline-none"
+          >
+            <ChatBubbleLeftIcon className="h-6 w-6" />
             {unreadMessageCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
                 {unreadMessageCount || 0}
               </span>
             )}
-        </button>
-        {isChatOpen && (
+          </button>
+          {isChatOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white shadow-md rounded-md p-2 border">
               <Chats />
             </div>
-        )}
-      </div>
+          )}
+        </div>
 
+        {/* User Menu */}
         <div className="relative" ref={userRef}>
           <button
             type="button"
@@ -172,7 +220,6 @@ const Navbar = () => {
                 className="w-8 h-8 object-cover rounded-full" // ✅ Fix size
               />
             )}
-
           </button>
 
           {isOpen && (
