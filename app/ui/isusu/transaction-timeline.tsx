@@ -8,6 +8,14 @@ interface Transaction {
   status: string;
   reference: string;
   description?: string;
+  sender?: {
+    id: string;
+    name: string;
+  };
+  recipient?: {
+    id: string;
+    name: string;
+  };
 }
 
 export default function TransactionTimeline() {
@@ -39,7 +47,7 @@ export default function TransactionTimeline() {
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
       <h2 className="text-xl font-bold mb-4">Transactions</h2>
-      <ul className="divide-y divide-gray-300">
+      <ul className="divide-y divide-gray-300 max-h-96 overflow-y-auto">
         {transactions.length > 0 ? (
           transactions.map((tx) => (
             <li key={tx.id} className="py-3">
@@ -53,6 +61,19 @@ export default function TransactionTimeline() {
                 <p className="text-sm text-gray-600">Status: {tx.status}</p>
                 <p className="text-sm text-gray-600">Reference: {tx.reference}</p>
                 {tx.description && <p className="text-sm text-gray-500">📌 {tx.description}</p>}
+                {tx.sender && (
+                  <p className="text-sm text-gray-600">
+                    From: {tx.sender.name}
+                  </p>
+                )}
+                <p className="text-sm text-gray-500">Date:
+                  {new Date(tx.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  {", "}
+                  {new Date(tx.createdAt).toLocaleDateString()}
+                </p>
               </div>
             </li>
           ))

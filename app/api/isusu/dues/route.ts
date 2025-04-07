@@ -22,7 +22,6 @@ export async function POST(req: Request) {
             },
         });
 
-
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
@@ -30,7 +29,7 @@ export async function POST(req: Request) {
         // Check if the Isusu exists
         const isusu = await prisma.isusu.findUnique({
             where: { id: isusuId },
-            select: { id: true },
+            select: { id: true, isusuName: true, createdById: true }, // Fetch isusuName and createdById as well
         });
 
         if (!isusu) {
@@ -59,6 +58,16 @@ export async function POST(req: Request) {
                     amount,
                     status: "completed",
                     dueDate: new Date(), // or any appropriate date value
+                },
+            }),
+            prisma.notification.create({
+                data: {
+                    userId: user.id,           // userId is required
+                    senderId: user.id,         // sender is the user who made the payment
+                    recipientId: isusu.createdById,     // recipient is the Isusu group
+                    isusuId: isusu.id,         // link the notification to the Isusu group
+                    type: "DUES",              // Type of notification (e.g., dues payment)
+                    message: `You have paid your ₦${amount} dues to ${isusu.isusuName}.`,
                 },
             }),
         ]);

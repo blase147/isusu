@@ -66,6 +66,18 @@ export async function POST(req: Request) {
       });
     }
 
+    // Create notification after successful payment
+    await prisma.notification.create({
+      data: {
+        userId: user.id, // user who made the payment
+        type: "DEPOSIT",
+        message: `You have successfully funded your wallet with ₦${amount}.`,
+        senderId: user.id, // sender is the user who made the payment
+        // recipientId: user.id, // recipient is the user themselves
+        isusuId: null, // Assuming this is not related to any Isusu group
+      },
+    });
+
     return NextResponse.json({ success: true, message: "Wallet funded successfully" });
   } catch (error) {
     console.error("Error in payment verification:", error);
