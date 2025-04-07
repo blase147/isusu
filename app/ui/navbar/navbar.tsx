@@ -145,7 +145,6 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-md px-6 py-4 fixed top-0 w-full z-50 flex justify-between items-center">
       <div className="text-2xl font-bold text-gray-800">Dashboard</div>
-      <Link href="/dashboard/messages">Messages</Link> {/* 🔗 Full Chat Page Link */}
       <div className="flex items-center gap-4">
         {/* Notification */}
         <div className="relative" ref={notifRef}>
