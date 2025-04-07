@@ -109,6 +109,7 @@ const NotificationDetails = () => {
                                 <Image
                                     src={notification?.recipient?.profilePicture || notification?.isusu?.isusuImage || "/avatar.png"}
                                     alt={notification?.recipient?.name || "Receiver"}
+                                    width={100}
                                     height={100}
                                     className="w-[100px] h-[100px] object-cover rounded-full"
                                 />
