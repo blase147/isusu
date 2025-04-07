@@ -54,10 +54,11 @@ const MembersList = ({ isusuId }: { isusuId: string }) => {
             <Image
               src={member.profilePicture || "/avatar.png"} // ✅ Use correct property
               alt={member.name}
-              width={40}
-              height={40}
-              className="rounded-full border"
+              width={50}
+              height={50}
+              className="w-[40px] h-[40px] object-cover rounded-full"
             />
+
             <Link
               href={{ pathname: "/dashboard/user-profile/user-details", query: { userId: member.id } }}
               className="block"
