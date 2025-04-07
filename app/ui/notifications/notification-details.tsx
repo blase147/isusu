@@ -28,6 +28,10 @@ const NotificationDetails = () => {
             profilePicture: string;
             isusuId?: string; // ID for Isusu (optional)
         };
+        isusu?: {
+            isusuName?: string;
+            isusuImage?: string; // Image for Isusu (optional)
+        };
         isusuName?: string;
         isusuImage?: string; // Image for Isusu (optional)
     }
@@ -100,17 +104,15 @@ const NotificationDetails = () => {
                                     {notification?.type || "Transaction"}
                                 </span>
                             </div>
-
                             {/* Receiver */}
                             <div className="flex flex-col items-center">
                                 <Image
-                                    src={notification?.recipient?.profilePicture || notification?.isusu.isusuImage || "/avatar.png"}
+                                    src={notification?.recipient?.profilePicture || notification?.isusu?.isusuImage || "/avatar.png"}
                                     alt={notification?.recipient?.name || "Receiver"}
-                                    width={100}
                                     height={100}
                                     className="w-[100px] h-[100px] object-cover rounded-full"
                                 />
-                                <p className="text-sm text-gray-700 mt-1">{notification?.isusu.isusuName || notification?.recipient?.name}</p>
+                                <p className="text-sm text-gray-700 mt-1">{notification?.isusu?.isusuName || notification?.recipient?.name}</p>
                                 <span className="text-xs text-gray-500">Receiver</span>
                             </div>
                         </div>
