@@ -94,7 +94,7 @@ export async function POST(req: Request) {
           recipientId: isusu.createdById,
           isusuId,
           type: "DONATION",
-          message: `${user.name} has donated ₦${amount} to your Isusu group: ${isusu.isusuName}.`,
+          message: `${user.name} has donated ₦${amount} to ${isusu.isusuName}.`,
         },
       }),
     ]);
