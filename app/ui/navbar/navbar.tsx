@@ -6,7 +6,6 @@ import Notifications from "../notifications/notifications";
 import Chats from "../messages/messages";
 import Image from "next/image";
 import { PowerIcon, EnvelopeIcon, UserIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
 import { signOut } from './../../lib/auth';
 
 
