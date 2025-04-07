@@ -33,6 +33,7 @@ const Navbar = () => {
   const chatRef = useRef<HTMLDivElement>(null);
 
   interface User {
+    id: string; // Added id property
     name: string;
     email: string;
     profilePicture?: string;
@@ -231,17 +232,25 @@ const Navbar = () => {
                 <EnvelopeIcon className="w-5 h-5 shrink-0" />
                 <span className="truncate">{user ? user.email : "Loading..."}</span>
               </div>
-              <a href="/dashboard/user-profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+              {/* Updated Profile Link to include userId */}
+              <a
+                href={`/dashboard/user-profile?userId=${user?.id}`}
+                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+              >
                 <UserIcon className="w-5 h-5" /> Profile
               </a>
               <form action={signOut}>
-                <button type="submit" className="flex h-[48px] w-full grow items-center justify-left gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3">
+                <button
+                  type="submit"
+                  className="flex h-[48px] w-full grow items-center justify-left gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3"
+                >
                   <PowerIcon className="w-6" />
                   <div className="hidden md:block">Sign Out</div>
                 </button>
               </form>
             </div>
           )}
+
         </div>
       </div>
     </nav>
