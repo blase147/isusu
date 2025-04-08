@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "../button";
+import Image from "next/image";
 import Link from "next/link";
 import TransactionTimeline from "./transaction-timeline";
 import MembersList from "./members-list";
@@ -84,7 +85,16 @@ const IsusuDashboard = () => {
     <div className="container mx-auto p-4 space-y-6 text-black-900 mt-6">
       {/* 📊 Isusu Header */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-        <div className="md:col-span-8">
+        <div>
+          <Image
+            src="/images/group-placeholder.jpg"
+            alt="Group Image"
+            width={128} // Adjust width as needed
+            height={128} // Adjust height as needed
+            className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover shadow-md"
+          />
+        </div>
+        <div className="md:col-span-6">
           <h1 className="text-2xl md:text-4xl font-bold text-gray-900">{isusuName}</h1>
           <p className="text-lg text-gray-600">{isusuTier}</p>
         </div>
@@ -92,10 +102,11 @@ const IsusuDashboard = () => {
           <h2 className="text-lg md:text-xl font-semibold text-gray-700">Group Wallet</h2>
           <p className="text-xl md:text-2xl font-bold text-green-700">
             {walletBalance !== null ? `N${walletBalance.toLocaleString()}` : "Loading..."}
-            {error && <p className="text-red-500 font-semibold">{error}</p>}
           </p>
+          {error && <p className="text-red-500 font-semibold">{error}</p>}
         </div>
       </div>
+
 
 
       <div className="flex flex-wrap justify-center gap-4 bg-gray-100 p-4 rounded-lg">
@@ -136,12 +147,14 @@ const IsusuDashboard = () => {
         )}
       </div>
 
-      {showDuesHistory && <DuesHistory isusuId={isusuId} />}
-      {showMakeDonation && <MakeDonation isusuId={isusuId} onClose={() => setShowMakeDonation(false)} />}
-      {showDues && <Dues isusuId={isusuId} onClose={() => setShowDues(false)} />}
-      {showAnnouncements && <AnnouncementsList isusuId={isusuId} />}
-      {showAnnouncementForm && <AnnouncementsList isusuId={isusuId} />}
-      {showAnnouncementForm && <AnnouncementForm isusuId={isusuId} onClose={() => setShowAnnouncementForm(false)} />}
+      <div>
+        {showDuesHistory && <DuesHistory isusuId={isusuId} />}
+        {showMakeDonation && <MakeDonation isusuId={isusuId} onClose={() => setShowMakeDonation(false)} />}
+        {showDues && <Dues isusuId={isusuId} onClose={() => setShowDues(false)} />}
+        {showAnnouncements && <AnnouncementsList isusuId={isusuId} />}
+        {showAnnouncementForm && <AnnouncementsList isusuId={isusuId} />}
+        {showAnnouncementForm && <AnnouncementForm isusuId={isusuId} onClose={() => setShowAnnouncementForm(false)} />}
+      </div>
 
 
       {/* 📜 Main Content (Posts, Dues, Members) */}
@@ -154,7 +167,7 @@ const IsusuDashboard = () => {
               </div>
 
               {/* 📜 Tabs for Posts, Dues & Members */}
-              <div className="md:col-span-9 space-y-4">
+              <div className="md:col-span-9 space-y-6">
                 <div className="flex overflow-x-auto space-x-2 md:space-x-4 border-b pb-2">
                   <button
                     className={`px-3 py-1 md:px-4 md:py-2 font-semibold ${activeTab === "posts" ? "border-b-2 border-indigo-600 text-indigo-600" : "text-gray-600"}`}
@@ -176,12 +189,12 @@ const IsusuDashboard = () => {
                   </button>
                 </div>
 
-          {activeTab === "posts" && (
-            <>
-              <CreatePost />
-              <Posts isusuId={isusuId} />
-            </>
-          )}
+                {activeTab === "posts" && (
+            <div className="md:col-span-9  space-y-4 bg-white p-4 rounded-lg shadow-md">
+                    <CreatePost />
+                    <Posts isusuId={isusuId} />
+                  </div>
+                )}
                 {activeTab === "dues" && <DuesHistory isusuId={isusuId} />}
                 {activeTab === "members" && <MembersList isusuId={isusuId} />}
               </div>

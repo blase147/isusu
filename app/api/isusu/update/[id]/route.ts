@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import { PrismaClient } from "@prisma/client";
-import { auth } from "@/auth";  // Keep it if you're using it for session/authentication
+import { PrismaClient } from '@prisma/client';
+import { auth } from '@/auth';
+import { v2 as cloudinary } from 'cloudinary';
 
 const prisma = new PrismaClient();
+
+// ✅ Cloudinary config
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+    api_key: process.env.CLOUDINARY_API_KEY!,
+    api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
     const { id } = params;
 
     try {
-        const isusu = await prisma.isusu.findUnique({
-            where: { id },
-        });
+        const isusu = await prisma.isusu.findUnique({ where: { id } });
 
         if (!isusu) {
             return NextResponse.json({ error: 'Isusu not found' }, { status: 404 });
@@ -25,12 +29,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 }
 
-// Example of using auth to check if the user is authenticated
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
     const { id } = params;
-
-    // Ensure user is authenticated
     const session = await auth();
+
     if (!session) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -39,35 +41,44 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         const formData = await request.formData();
 
         const isusuName = formData.get('isusuName') as string;
-        const tier = formData.get('tier') as string;
         const milestone = parseFloat(formData.get('milestone') as string);
         const frequency = formData.get('frequency') as string;
         const isusuClass = formData.get('isusuClass') as string;
-
         const imageFile = formData.get('groupImage') as File | null;
 
-        let imageUrl: string | undefined;
+        const currentIsusu = await prisma.isusu.findUnique({ where: { id } });
+
+        if (!currentIsusu) {
+            return NextResponse.json({ error: 'Isusu not found' }, { status: 404 });
+        }
+
+        let imageUrl = currentIsusu.isusuImage;
 
         if (imageFile && imageFile.size > 0) {
             const bytes = await imageFile.arrayBuffer();
             const buffer = Buffer.from(bytes);
 
-            const imageName = `${uuidv4()}_${imageFile.name}`;
-            const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+            const uploadResult = await new Promise<string>((resolve, reject) => {
+                cloudinary.uploader
+                    .upload_stream({ folder: 'isusu_images' }, (err, result) => {
+                        if (err || !result) return reject(err || new Error('Upload failed'));
+                        resolve(result.secure_url);
+                    })
+                    .end(buffer);
+            });
 
-            await writeFile(path.join(uploadDir, imageName), buffer);
-            imageUrl = `/uploads/${imageName}`;
+            imageUrl = uploadResult;
         }
 
         const updatedIsusu = await prisma.isusu.update({
             where: { id },
             data: {
                 isusuName,
-                tier,
                 milestone,
                 frequency,
                 isusuClass,
-                ...(imageUrl && { groupImage: imageUrl }),
+                tier: currentIsusu.tier,
+                isusuImage: imageUrl,
             },
         });
 
