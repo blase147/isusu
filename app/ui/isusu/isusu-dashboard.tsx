@@ -177,9 +177,10 @@ const IsusuDashboard = () => {
               </div>
 
               {/* 📜 Tabs for Posts, Dues & Members */}
-              <div className="md:col-span-9 space-y-6">
+              <div className="md:col-span-7 space-y-6 mr-24">
                 <div className="flex overflow-x-auto space-x-2 md:space-x-4 border-b pb-2">
                   <button
+                    type="button"
                     className={`px-3 py-1 md:px-4 md:py-2 font-semibold ${activeTab === "posts" ? "border-b-2 border-indigo-600 text-indigo-600" : "text-gray-600"}`}
                     onClick={() => setActiveTab("posts")}
                   >
@@ -192,6 +193,7 @@ const IsusuDashboard = () => {
                     💰 Dues
                   </button>
                   <button
+                    type="button"
                     className={`px-3 py-1 md:px-4 md:py-2 font-semibold ${activeTab === "members" ? "border-b-2 border-indigo-600 text-indigo-600" : "text-gray-600"}`}
                     onClick={() => setActiveTab("members")}
                   >
@@ -214,7 +216,7 @@ const IsusuDashboard = () => {
                 {showTransactions ? "Hide Transactions" : "Show Transactions"}
               </button>
               {showTransactions && <TransactionTimeline />}
-              <div className="hidden md:block md:col-span-3">
+              <div className="hidden md:block md:col-span-4">
                 <TransactionTimeline />
               </div>
             </div>
