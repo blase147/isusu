@@ -107,17 +107,21 @@ const NotificationDetails = () => {
                             {/* Receiver */}
                             <div className="flex flex-col items-center">
                               {notification ? (
-                                <Image
-                                        src={notification?.recipient?.profilePicture || notification?.isusu?.isusuImage || "/envelope.png"}
-                                    alt={notification?.recipient?.name || "Receiver"}
-                                    width={100}
-                                    height={100}
-                                    className="w-[100px] h-[100px] object-cover rounded-full"
-                                />
+                                    <Image
+                                        src={
+                                            notification?.recipient?.profilePicture ||
+                                            notification?.isusu?.isusuImage ||
+                                            "/wallet.png"
+                                        }
+                                        alt={notification?.recipient?.name || "Receiver"}
+                                        width={100}
+                                        height={100}
+                                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover"
+                                    />
                               ) : (
                                         <Image src={"/avatar.png"} alt="Default" width={100} height={100} className="w-[100px] h-[100px] object-cover rounded-full" />
                               )}
-                                <p className="text-sm text-gray-700 mt-1">{notification?.isusu?.isusuName || notification?.recipient?.name ||"your wallet"}</p>
+                                <p className="text-sm text-gray-700 mt-1">{notification?.isusu?.isusuName || notification?.recipient?.name ||"Wallet"}</p>
                                 <span className="text-xs text-gray-500">Receiver</span>
                             </div>
                         </div>
@@ -134,7 +138,7 @@ const NotificationDetails = () => {
                                 <h2 className="text-md font-semibold text-gray-800 mb-2">Transaction Details</h2>
                                 <ul className="space-y-1 text-sm text-gray-600">
                                     <li><span className="font-medium">Type:</span> {notification.type}</li>
-                                    <li><span className="font-medium">Amount:</span> {notification.createdAt}</li>
+                                    <li><span className="font-medium">Date:</span> {notification.createdAt}</li>
                                 </ul>
                             </div>
                         )}

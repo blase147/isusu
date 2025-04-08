@@ -126,7 +126,7 @@ const IsusuDashboard = () => {
             <Link href={`/isusu/${isusuId}/withdraw`}>
               <Button className="bg-red-500 text-white px-4 py-2 rounded-lg">💰 Withdraw</Button>
             </Link>
-            <Link href={`/isusu/${isusuId}/edit`}>
+            <Link href={`/dashboard/update-isusu/${isusuId}`}>
               <Button className="bg-blue-500 text-white px-4 py-2 rounded-lg">✏️ Edit Group</Button>
             </Link>
             <Link href={`/dashboard/manage-members/${isusuId}`}>
