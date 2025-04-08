@@ -147,16 +147,10 @@ const IsusuUpdate = () => {
               placeholder="Upload a group image"
               title="Upload a group image"
             />
-              <Image
-                src={groupImageUrl || ""}
-                alt="Group"
-                className="mt-2 h-32 w-full object-cover rounded"
-                width={400}
-                height={128}
-              />
+
               {groupImageUrl && (
                 <Image
-                  src={groupImageUrl || ""}
+                  src={groupImageUrl || "/avartar.png"}
                   alt="Group"
                   className="mt-2 h-32 w-full object-cover rounded"
                   width={400}

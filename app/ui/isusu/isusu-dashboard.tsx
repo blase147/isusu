@@ -23,6 +23,7 @@ const IsusuDashboard = () => {
   const { data: session } = useSession();
 
   const [isusuName, setIsusuName] = useState("");
+  const [isusuData, setIsusuData] = useState<{ imageUrl?: string }>({});
   const [isusuTier, setIsusuTier] = useState("Unknown Tier");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -64,7 +65,8 @@ const IsusuDashboard = () => {
           isusuData.joined?.find((group: { id: string }) => group.id === isusuId);
 
         if (!isusu) throw new Error("Isusu group not found");
-
+        setIsusuName(isusu.isusuName);
+        setIsusuData({ imageUrl: isusu.isusuImage });
         setIsusuName(isusu.isusuName);
         setIsusuTier(isusu.tier || "Unknown Tier");
         setWalletBalance(walletData.balance ?? 0);
@@ -85,19 +87,25 @@ const IsusuDashboard = () => {
     <div className="container mx-auto p-4 space-y-6 text-black-900 mt-6">
       {/* 📊 Isusu Header */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-        <div>
-          <Image
-            src="/images/group-placeholder.jpg"
-            alt="Group Image"
-            width={128} // Adjust width as needed
-            height={128} // Adjust height as needed
-            className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover shadow-md"
-          />
+        <div className="md:col-span-4 flex justify-center">
+          <div className="relative w-60 h-60">
+            <Image
+              src={isusuData.imageUrl || '/images/group-placeholder.jpg'}
+              alt="Group Image"
+              fill
+              className="rounded-2xl object-cover shadow-lg"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-2 rounded-b-2xl text-center">
+              <h1 className="text-lg md:text-xl font-bold">{isusuName}</h1>
+              <p className="text-sm">{isusuTier}</p>
+            </div>
+          </div>
         </div>
-        <div className="md:col-span-6">
-          <h1 className="text-2xl md:text-4xl font-bold text-gray-900">{isusuName}</h1>
-          <p className="text-lg text-gray-600">{isusuTier}</p>
+
+        <div className="md:col-span-4">
+          {/* Leave this blank or use for other content if needed */}
         </div>
+
         <div className="md:col-span-4 bg-white shadow-lg p-4 rounded-xl text-center">
           <h2 className="text-lg md:text-xl font-semibold text-gray-700">Group Wallet</h2>
           <p className="text-xl md:text-2xl font-bold text-green-700">
@@ -106,6 +114,8 @@ const IsusuDashboard = () => {
           {error && <p className="text-red-500 font-semibold">{error}</p>}
         </div>
       </div>
+
+
 
 
 
