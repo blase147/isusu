@@ -3,6 +3,7 @@
 import { BackwardIcon } from "@heroicons/react/24/outline";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 
 interface InitialData {
@@ -127,6 +128,7 @@ const IsusuUpdate = () => {
           <div>
             <label className="block font-semibold">Isusu Name</label>
             <input
+              title="Isusu Name"
               type="text"
               className="w-full border p-2 rounded-md mt-1"
               value={isusuName}
@@ -142,15 +144,31 @@ const IsusuUpdate = () => {
               accept="image/*"
               className="w-full border p-2 rounded-md mt-1"
               onChange={handleFileChange}
+              placeholder="Upload a group image"
+              title="Upload a group image"
             />
-            {groupImageUrl && (
-              <img src={groupImageUrl} alt="Group" className="mt-2 h-32 w-full object-cover rounded" />
-            )}
+              <Image
+                src={groupImageUrl || ""}
+                alt="Group"
+                className="mt-2 h-32 w-full object-cover rounded"
+                width={400}
+                height={128}
+              />
+              {groupImageUrl && (
+                <Image
+                  src={groupImageUrl || ""}
+                  alt="Group"
+                  className="mt-2 h-32 w-full object-cover rounded"
+                  width={400}
+                  height={128}
+                />
+              )}
           </div>
 
           <div>
             <label className="block font-semibold">Class of Isusu</label>
             <select
+              title="Select Isusu Class"
               className="w-full border p-2 rounded-md mt-1"
               value={isusuClass}
               onChange={(e) => handleIsusuClassChange(e.target.value)}
@@ -171,6 +189,7 @@ const IsusuUpdate = () => {
               onChange={(e) => setFrequency(e.target.value)}
               disabled={!isusuClass}
               required
+              title="Select Milestone"
             >
               <option value="" disabled>Select Milestone</option>
               {isusuClasses.find(({ value }) => value === isusuClass)?.frequencies.map(freq => (
@@ -182,6 +201,7 @@ const IsusuUpdate = () => {
           <div>
             <label className="block font-semibold">Contribution Amount</label>
             <input
+              title="Contribution Amount"
               type="number"
               className="w-full border p-2 rounded-md mt-1"
               value={milestone}
@@ -193,6 +213,7 @@ const IsusuUpdate = () => {
           <div>
             <label className="block font-semibold">Tier</label>
             <input
+              title="Tier"
               type="text"
               className="w-full border p-2 rounded-md mt-1 bg-gray-100 cursor-not-allowed"
               value={tier}

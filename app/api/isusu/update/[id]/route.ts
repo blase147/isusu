@@ -12,8 +12,14 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-    const { id } = params;
+// ✅ Updated GET route — no second argument allowed
+export async function GET(request: NextRequest) {
+    const url = new URL(request.url);
+    const id = url.pathname.split('/').pop(); // Gets the last segment (your [id])
+
+    if (!id) {
+        return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
 
     try {
         const isusu = await prisma.isusu.findUnique({ where: { id } });
@@ -28,6 +34,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         return NextResponse.json({ error: 'Server error' }, { status: 500 });
     }
 }
+
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
     const { id } = params;
