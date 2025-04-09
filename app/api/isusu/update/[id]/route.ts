@@ -36,12 +36,18 @@ export async function GET(request: NextRequest) {
 }
 
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-    const { id } = params;
+export async function PUT(request: NextRequest) {
+    const url = new URL(request.url);
+    const id = url.pathname.split('/').pop(); // Extract [id] from the URL
+
     const session = await auth();
 
     if (!session) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!id) {
+        return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
     try {
@@ -95,3 +101,4 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         return NextResponse.json({ error: 'Server error' }, { status: 500 });
     }
 }
+
